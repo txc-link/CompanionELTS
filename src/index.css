@@ -20,10 +20,63 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
+
+  --animate-streak-flicker: streak-flicker 2s ease-in-out infinite;
+  --animate-in: animate-in 0.2s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-zoom-in-95: zoom-in-95 0.2s ease-out;
+  --animate-slide-in-from-right-4: slide-in-from-right-4 0.3s ease-out;
+}
+
+@keyframes streak-flicker {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  25% { opacity: 0.8; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+  75% { opacity: 0.9; transform: scale(0.98); }
+}
+
+@keyframes animate-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoom-in-95 {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-from-right-4 {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+/* Streak flame flicker */
+.streak-flame {
+  animation: streak-flicker 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* Scrollbar hide */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
