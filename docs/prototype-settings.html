@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人设置 — IELTS Buddy</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,18..32,300..700;1,18..32,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --success: #6ec56e;
+  --danger: #e85b4b;
+  --info: #5b9bd5;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.page-content {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* ---------- header ---------- */
+.page-header {
+  margin-bottom: 28px;
+}
+.page-header h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.page-header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.card-title .icon { margin-right: 6px; }
+
+/* ---------- profile card ---------- */
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-amber));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0f1a12;
+  flex-shrink: 0;
+}
+.profile-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile-fields label {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.profile-fields input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  outline: none;
+  transition: border 0.2s;
+}
+.profile-fields input:focus {
+  border-color: var(--accent-green);
+}
+
+/* ---------- toggle switch ---------- */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-label {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+.toggle .slider::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: 0.25s;
+}
+.toggle input:checked + .slider {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+.toggle input:checked + .slider::after {
+  transform: translateX(20px);
+  background: #fff;
+}
+
+/* ---------- score tabs ---------- */
+.score-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.score-tab {
+  flex: 1;
+  padding: 8px 0;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: 0.2s;
+  font-family: 'Fraunces', serif;
+}
+.score-tab:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+.score-tab.active {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #0f1a12;
+}
+
+.goal-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.goal-field {
+  flex: 1;
+}
+.goal-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+.goal-field input,
+.goal-field .level-badge {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+}
+.goal-field input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+.level-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.level-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  flex-shrink: 0;
+}
+
+/* ---------- partner card ---------- */
+.partner-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.partner-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--info), #7f6bc4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.partner-info {
+  flex: 1;
+  min-width: 0;
+}
+.partner-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.progress-mini {
+  height: 4px;
+  background: var(--bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-mini-fill {
+  width: 62%;
+  height: 100%;
+  background: var(--accent-gold);
+  border-radius: 2px;
+}
+.partner-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+.btn-outline:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+.btn-danger-outline {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn-danger-outline:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-green {
+  background: var(--accent-green);
+  color: #0f1a12;
+}
+.btn-green:hover {
+  filter: brightness(1.1);
+}
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--accent-green);
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.btn-ghost:hover {
+  color: var(--accent-gold);
+}
+
+/* ---------- notification prefs ---------- */
+.notif-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item .label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.notif-item .label-wrap .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  flex-shrink: 0;
+}
+.notif-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ai push tabs (small variant) */
+.ai-tabs {
+  display: flex;
+  gap: 4px;
+}
+.ai-tab {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.ai-tab:hover {
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+.ai-tab.active {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #0f1a12;
+}
+.ai-tab.off {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.ai-tab.off.active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.time-range {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ---------- theme row ---------- */
+.theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.theme-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.theme-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+/* ---------- danger zone ---------- */
+.danger-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- divider ---------- */
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 14px 0;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 480px) {
+  body { padding: 24px 12px; }
+  .card { padding: 16px; }
+  .profile-row { flex-direction: column; align-items: flex-start; }
+  .score-tabs { gap: 4px; }
+  .score-tab { font-size: 13px; padding: 7px 0; }
+  .partner-card { flex-direction: column; align-items: stretch; }
+  .danger-actions { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <!-- header -->
+  <div class="page-header">
+    <h1>&#x2699;&#xFE0F; &#x4E2A;&#x4EBA;&#x8BBE;&#x7F6E;</h1>
+    <div class="subtitle">&#x7BA1;&#x7406;&#x8D26;&#x6237; &middot; &#x901A;&#x77E5;&#x504F;&#x597D; &middot; &#x5B66;&#x4E60;&#x76EE;&#x6807;</div>
+  </div>
+
+  <!-- 1. profile card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="icon">&#x1F464;</span> &#x4E2A;&#x4EBA;&#x8D44;&#x6599;</div>
+    </div>
+    <div class="profile-row">
+      <div class="avatar">&#x6211;</div>
+      <div class="profile-fields">
+        <div>
+          <label>&#x6635;&#x79F0;</label>
+          <input type="text" value="&#x70E4;&#x9D2C;&#x4EBA;" />
+        </div>
+        <div>
+          <label>&#x90AE;&#x7BB1;</label>
+          <input type="email" value="user@example.com" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. goal setting -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="icon">&#x1F3AF;</span> &#x76EE;&#x6807;&#x8BBE;&#x5B9A;</div>
+    </div>
+    <div class="score-tabs">
+      <div class="score-tab">6.0</div>
+      <div class="score-tab">6.5</div>
+      <div class="score-tab active">7.0</div>
+      <div class="score-tab">7.5</div>
+    </div>
+    <div class="goal-row">
+      <div class="goal-field">
+        <label>&#x8003;&#x8BD5;&#x65E5;&#x671F;</label>
+        <input type="date" value="2026-07-25" />
+      </div>
+      <div class="goal-field">
+        <label>&#x5F53;&#x524D;&#x7B49;&#x7EA7;</label>
+        <div class="level-badge">
+          <span class="level-dot"></span>
+          L3 &middot; &#x8FDB;&#x9636;&#x7EA7;
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. partner management -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="icon">&#x1F91D;</span> &#x642D;&#x5B50;&#x7BA1;&#x7406;</div>
+    </div>
+    <div class="partner-card">
+      <div class="partner-avatar">&#x660E;</div>
+      <div class="partner-info">
+        <div class="partner-name">&#x5C0F;&#x660E;</div>
+        <div class="progress-mini">
+          <div class="progress-mini-fill"></div>
+        </div>
+      </div>
+      <button class="btn btn-danger-outline">&#x89E3;&#x7F51;&#x642D;&#x5B50;</button>
+    </div>
+    <button class="btn btn-outline" style="width:100%">+ &#x9080;&#x8BF7;&#x65B0;&#x642D;&#x5B50;</button>
+  </div>
+
+  <!-- 4. notification preferences -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="icon">&#x1F514;</span> &#x901A;&#x77E5;&#x504F;&#x597D;</div>
+    </div>
+
+    <!-- 学习提醒 -->
+    <div class="notif-item">
+      <div class="label-wrap">
+        <span class="dot"></span>
+        <span class="notif-label">&#x5B66;&#x4E60;&#x63D0;&#x9192;</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- 对战通知 -->
+    <div class="notif-item">
+      <div class="label-wrap">
+        <span class="dot" style="background:var(--info)"></span>
+        <span class="notif-label">&#x5BF9;&#x6218;&#x901A;&#x77E5;</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- AI主动推送 -->
+    <div class="notif-item" style="flex-wrap:wrap; gap:8px 0;">
+      <div class="label-wrap" style="flex:1 1 auto;">
+        <span class="dot" style="background:var(--accent-amber)"></span>
+        <span class="notif-label">AI&#x4E3B;&#x52A8;&#x63A8;&#x9001;</span>
+      </div>
+      <div class="ai-tabs">
+        <span class="ai-tab off">&#x5173;&#x95ED;</span>
+        <span class="ai-tab">&#x968F;&#x673A;</span>
+        <span class="ai-tab active">&#x6B63;&#x5E38;</span>
+        <span class="ai-tab">&#x7D27;&#x8FEB;</span>
+      </div>
+    </div>
+
+    <!-- 免打扰时段 -->
+    <div class="notif-item">
+      <div class="label-wrap">
+        <span class="dot" style="background:var(--text-muted)"></span>
+        <span class="notif-label">&#x514D;&#x6253;&#x6270;&#x65F6;&#x6BB5;</span>
+      </div>
+      <span class="time-range">23:00 - 09:00</span>
+    </div>
+  </div>
+
+  <!-- 5. theme toggle -->
+  <div class="card">
+    <div class="theme-row">
+      <div class="theme-label-wrap">
+        <span class="theme-icon">&#x1F319;</span>
+        <span class="notif-label">&#x6DF1;&#x8272;&#x6A21;&#x5F0F;</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- 6. danger zone -->
+  <div class="card" style="border-color:rgba(232,91,75,0.25);">
+    <div class="card-header">
+      <div class="card-title" style="color:var(--danger);"><span class="icon">&#x26A0;&#xFE0F;</span> &#x5371;&#x9669;&#x533A;</div>
+    </div>
+    <div class="danger-actions">
+      <button class="btn btn-danger-outline">&#x6CE8;&#x9500;&#x8D26;&#x6237;</button>
+      <button class="btn btn-outline">&#x5BFC;&#x51FA;&#x5B66;&#x4E60;&#x6570;&#x636E;</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

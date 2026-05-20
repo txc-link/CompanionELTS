@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心愿约定卡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --danger: #e85b4b;
+  --warning: #e8b84b;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.page-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── Header ── */
+.page-header {
+  margin-bottom: 36px;
+}
+
+.page-header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.page-header .subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+/* ── Create Card ── */
+.create-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 36px;
+}
+
+.create-card h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.create-card textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 14px;
+}
+
+.create-card textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.create-card textarea:focus {
+  border-color: var(--accent-green);
+}
+
+.create-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--accent-amber), var(--accent-gold));
+  color: #0f1a12;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-ai:hover {
+  opacity: 0.88;
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-green);
+  color: #0f1a12;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-save:hover {
+  opacity: 0.88;
+}
+
+/* ── Horizontal Scroll Row ── */
+.wish-scroll {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 36px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+.wish-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.wish-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wish-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+/* ── Wish Card ── */
+.wish-card {
+  flex: 0 0 300px;
+  min-height: 260px;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.wish-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Locked cards */
+.wish-card.locked {
+  background: linear-gradient(145deg, #1e2f22, #15241a);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  color: var(--text-secondary);
+}
+
+.wish-card.locked .wish-emoji {
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.wish-card.locked .wish-text {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: auto;
+}
+
+.wish-card.locked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+  background: rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+
+.lock-badge {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(122,145,112,0.25);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+
+/* Unlocked card */
+.wish-card.unlocked {
+  background: linear-gradient(145deg, #2e3f2a, #243a26);
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 0 24px rgba(232,184,75,0.2), 0 4px 20px rgba(0,0,0,0.35);
+}
+
+.wish-card.unlocked .wish-emoji {
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.wish-card.unlocked .wish-text {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.unlock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-gold);
+  color: #0f1a12;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+/* ── Expanded Detail ── */
+.expanded-detail {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 36px;
+}
+
+.expanded-detail h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 18px;
+  color: var(--text-primary);
+}
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 12px;
+}
+
+.detail-label {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 2px;
+}
+
+.detail-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.detail-value.original {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted);
+  text-decoration-thickness: 1px;
+}
+
+.detail-value.ai-version {
+  color: var(--accent-gold);
+  font-weight: 500;
+  background: rgba(232,184,75,0.08);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--accent-gold);
+}
+
+.detail-value.date-info {
+  color: var(--text-secondary);
+}
+
+.btn-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--info);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 6px;
+}
+
+.btn-share:hover {
+  opacity: 0.88;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 60px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-state .empty-illustration {
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.empty-state .empty-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state .empty-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 360px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .page-content {
+    padding: 20px 16px;
+  }
+  .page-header h1 {
+    font-size: 28px;
+  }
+  .wish-card {
+    flex: 0 0 260px;
+  }
+  .detail-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .detail-label {
+    width: auto;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>💫 心愿约定卡</h1>
+    <div class="subtitle">目标达成后，一起去...</div>
+  </div>
+
+  <!-- Create New Wish Card -->
+  <div class="create-card">
+    <h2>写下你们的约定...</h2>
+    <textarea placeholder="比如：等考到 7 分，一起去xxx！"></textarea>
+    <div class="create-actions">
+      <button class="btn-ai">✨ AI 美化</button>
+      <button class="btn-save">💾 保存约定</button>
+    </div>
+  </div>
+
+  <!-- Wish Cards Horizontal Scroll -->
+  <div class="wish-scroll">
+
+    <!-- Card 1 – Locked -->
+    <div class="wish-card locked">
+      <div class="wish-emoji">🎯</div>
+      <div class="wish-text">考到 7 分后一起去日本！</div>
+      <div class="lock-badge">🔒 目标达成后解锁</div>
+    </div>
+
+    <!-- Card 2 – Locked -->
+    <div class="wish-card locked">
+      <div class="wish-emoji">✈️</div>
+      <div class="wish-text">一起去冰岛看极光</div>
+      <div class="lock-badge">🔒 目标达成后解锁</div>
+    </div>
+
+    <!-- Card 3 – Unlocked -->
+    <div class="wish-card unlocked">
+      <div class="wish-emoji">🍜</div>
+      <div class="wish-text">去吃一顿超级日料！</div>
+      <div class="unlock-badge">✅ 已解锁</div>
+    </div>
+
+  </div>
+
+  <!-- Expanded Detail for Card 3 -->
+  <div class="expanded-detail">
+    <h3>🍜 去吃一顿超级日料！</h3>
+    <div class="detail-grid">
+      <div class="detail-row">
+        <div class="detail-label">原始约定</div>
+        <div class="detail-value original">考完了去吃日料</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">AI 美化</div>
+        <div class="detail-value ai-version">等考到目标分数，一起去那家你收藏了很久的 omakase，坐在板前看师傅捏寿司，喝一杯冰镇清酒，为这段拼命的日子干杯 🍣</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">创建时间</div>
+        <div class="detail-value date-info">2026-03-15</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">解锁时间</div>
+        <div class="detail-value date-info">2026-05-20</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label"></div>
+        <div>
+          <button class="btn-share">📸 分享</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-illustration">🤔</div>
+    <div class="empty-title">还没有约定？</div>
+    <div class="empty-desc">和搭子聊聊目标吧，把那些想一起完成的心愿写下来，等达成目标后一起去实现。</div>
+  </div>
+
+</div>
+
+</body>
+</html>

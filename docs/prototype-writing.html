@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IELTS AI 写作批改 — 原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f1a12;
+      font-family: 'DM Sans', sans-serif;
+      color: #f4f0e6;
+      line-height: 1.6;
+      padding: 32px 40px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page-content {
+      --bg-primary: #0f1a12;
+      --bg-card: #1e3022;
+      --bg-elevated: #243828;
+      --accent-green: #6ec56e;
+      --accent-gold: #e8b84b;
+      --accent-amber: #c4893a;
+      --text-primary: #f4f0e6;
+      --text-secondary: #b8c4a8;
+      --text-muted: #7a9170;
+      --border-subtle: #2a3d2c;
+      --danger: #e85b4b;
+      --info: #5b9bd5;
+      --warning: #e8b84b;
+      --radius-md: 16px;
+      --radius-sm: 8px;
+      max-width: 1400px;
+      width: 100%;
+    }
+
+    /* ===== Examiner Selector ===== */
+    .examiner-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .examiner-bar-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .examiner-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+    .examiner-tab {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 20px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .examiner-tab:hover {
+      color: var(--text-secondary);
+    }
+    .examiner-tab.active {
+      background: var(--accent-green);
+      color: #0f1a12;
+    }
+
+    /* ===== Page Header ===== */
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-title {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+    .page-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== Main Grid ===== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ===== Editor Panel ===== */
+    .editor-panel {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .task-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+    .task-tab {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 18px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .task-tab:hover {
+      color: var(--text-secondary);
+    }
+    .task-tab.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-gold);
+      background: rgba(232, 184, 75, 0.08);
+      padding: 4px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(232, 184, 75, 0.15);
+    }
+    .timer-icon {
+      font-size: 15px;
+    }
+
+    .editor-body {
+      padding: 0;
+    }
+    .editor-body textarea {
+      width: 100%;
+      min-height: 360px;
+      padding: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      border: none;
+      outline: none;
+      resize: vertical;
+    }
+    .editor-body textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .editor-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .word-count {
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .word-count-num {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-gold);
+    }
+    .word-count-num.over {
+      color: var(--danger);
+    }
+    .word-count-target {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .word-count-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-save {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 22px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-save:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+    .btn-submit {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 22px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent-green);
+      color: #0f1a12;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-submit:hover {
+      opacity: 0.85;
+    }
+
+    /* ===== Feedback Panel ===== */
+    .feedback-panel {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    /* --- Feedback Header / Score Summary --- */
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+    .band-score-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 80px;
+    }
+    .band-score-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .band-score {
+      font-family: 'Fraunces', serif;
+      font-size: 44px;
+      font-weight: 700;
+      color: var(--accent-green);
+      line-height: 1;
+    }
+
+    .dimension-scores {
+      display: flex;
+      gap: 14px;
+      flex: 1;
+    }
+    .dimension {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 48px;
+      padding: 6px 12px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+    .dimension-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    .dimension-value {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .btn-challenge {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border: 1px solid var(--accent-amber);
+      border-radius: var(--radius-sm);
+      background: rgba(196, 137, 58, 0.12);
+      color: var(--accent-gold);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-challenge:hover {
+      background: rgba(196, 137, 58, 0.22);
+    }
+
+    /* --- Correction Details --- */
+    .corrections-heading {
+      padding: 16px 20px 0;
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .corrections-list {
+      padding: 12px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .correction-item {
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      padding: 16px;
+      transition: border-color 0.2s;
+    }
+    .correction-item:hover {
+      border-color: rgba(110, 197, 110, 0.2);
+    }
+
+    .correction-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .correction-tag.tag-grammar {
+      background: rgba(91, 155, 213, 0.15);
+      color: var(--info);
+    }
+    .correction-tag.tag-style {
+      background: rgba(110, 197, 110, 0.15);
+      color: var(--accent-green);
+    }
+    .correction-tag.tag-replace {
+      background: rgba(232, 184, 75, 0.15);
+      color: var(--accent-gold);
+    }
+
+    .correction-swap {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 12px;
+      margin-bottom: 10px;
+    }
+    .swap-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 40px;
+      padding-top: 2px;
+    }
+    .swap-text {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .swap-text.original {
+      color: var(--danger);
+      text-decoration: line-through;
+      text-decoration-color: rgba(232, 91, 75, 0.5);
+    }
+    .swap-text.suggested {
+      color: var(--accent-green);
+    }
+
+    .correction-note {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 2px;
+    }
+    .correction-note strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      body {
+        padding: 16px;
+      }
+      .feedback-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .band-score-wrap {
+        flex-direction: row;
+        gap: 8px;
+      }
+      .dimension-scores {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .editor-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .editor-footer {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .page-title {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-content">
+
+    <!-- ========== Multi-Examiner Selector ========== -->
+    <div class="examiner-bar">
+      <span class="examiner-bar-label">考官模式</span>
+      <div class="examiner-tabs">
+        <button class="examiner-tab active">1 位考官</button>
+        <button class="examiner-tab">2 位考官</button>
+        <button class="examiner-tab">3 位考官</button>
+      </div>
+    </div>
+
+    <!-- ========== Page Title ========== -->
+    <div class="page-header">
+      <h1 class="page-title">&#x270D;&#xFE0F; AI 写作批改</h1>
+      <p class="page-subtitle">多考官模式 · 支持质疑评分</p>
+    </div>
+
+    <!-- ========== Main Content Grid ========== -->
+    <div class="main-grid">
+
+      <!-- ===== Left: Writing Editor ===== -->
+      <div class="editor-panel">
+        <div class="editor-header">
+          <div class="task-tabs">
+            <button class="task-tab active">Task 1</button>
+            <button class="task-tab">Task 2</button>
+          </div>
+          <div class="timer">
+            <span class="timer-icon">&#x23F1;</span>
+            <span>58:32</span>
+          </div>
+        </div>
+
+        <div class="editor-body">
+          <textarea>The issue of environmental degradation has become one of the most pressing challenges of our time. While some people believe that the government should take measures to protecting the environment through stricter regulations, others argue that individuals also have a crucial role to play in addressing this crisis.
+
+On the one hand, governmental intervention is undeniably important. Authorities have the resources and authority to implement large-scale environmental policies, such as imposing carbon taxes, subsidizing renewable energy, and enforcing emission standards. For instance, countries that have adopted ambitious green energy targets have seen a significant reduction in their carbon footprint. Moreover, governments can invest in public infrastructure like efficient public transportation systems, which encourage people to make good choices that reduce pollution.
+
+On the other hand, individual actions should not be underestimated. When millions of people collectively make small changes in their daily routines — reducing electricity consumption, minimizing waste, and choosing eco-friendly products — the cumulative effect can be substantial. Many people think that personal efforts are negligible compared to industrial pollution, but this overlooks the power of consumer demand to drive corporate behavior. Companies respond to what customers want, and a shift toward sustainable consumption can transform entire industries.
+
+In my opinion, the most effective approach is a collaborative one. Government legislation sets the framework and provides incentives, while individual commitment ensures that these policies are embraced at the grassroots level. Without both elements working in tandem, meaningful progress toward environmental sustainability will remain elusive.
+
+In conclusion, tackling environmental problems requires a concerted effort from all sectors of society. Only through shared responsibility can we hope to preserve the planet for future generations.</textarea>
+        </div>
+
+        <div class="editor-footer">
+          <div class="word-count">
+            <span class="word-count-num over">287</span>
+            <span class="word-count-target">/ 250</span>
+            <span class="word-count-label">词</span>
+          </div>
+          <div class="editor-actions">
+            <button class="btn-save">保存草稿</button>
+            <button class="btn-submit">提交批改</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Right: Feedback Panel ===== -->
+      <div class="feedback-panel">
+        <div class="feedback-header">
+          <div class="band-score-wrap">
+            <span class="band-score-label">Band Score</span>
+            <span class="band-score">6.0</span>
+          </div>
+
+          <div class="dimension-scores">
+            <div class="dimension">
+              <span class="dimension-label">TR</span>
+              <span class="dimension-value">6.0</span>
+            </div>
+            <div class="dimension">
+              <span class="dimension-label">CC</span>
+              <span class="dimension-value">6.0</span>
+            </div>
+            <div class="dimension">
+              <span class="dimension-label">LR</span>
+              <span class="dimension-value">5.5</span>
+            </div>
+            <div class="dimension">
+              <span class="dimension-label">GRA</span>
+              <span class="dimension-value">6.5</span>
+            </div>
+          </div>
+
+          <button class="btn-challenge">质疑评分</button>
+        </div>
+
+        <div class="corrections-heading">修正建议</div>
+
+        <div class="corrections-list">
+          <!-- Correction 1: Grammar -->
+          <div class="correction-item">
+            <span class="correction-tag tag-grammar">语法</span>
+            <div class="correction-swap">
+              <span class="swap-label">原文</span>
+              <span class="swap-text original">the government should take measures to protecting the environment</span>
+              <span class="swap-label">建议</span>
+              <span class="swap-text suggested">the government should take measures to protect the environment</span>
+            </div>
+            <div class="correction-note">
+              <strong>说明：</strong>介词 "to" 在此处是不定式标记，后接动词原形，不应使用动名词 "protecting"。类似错误在文中出现两次，建议统一修正。
+            </div>
+          </div>
+
+          <!-- Correction 2: Style / Lexical resource -->
+          <div class="correction-item">
+            <span class="correction-tag tag-style">优化</span>
+            <div class="correction-swap">
+              <span class="swap-label">原文</span>
+              <span class="swap-text original">Many people think that personal efforts are negligible compared to industrial pollution</span>
+              <span class="swap-label">建议</span>
+              <span class="swap-text suggested">A considerable number of individuals contend that personal efforts pale in significance when set against industrial pollution</span>
+            </div>
+            <div class="correction-note">
+              <strong>说明：</strong>"Many people think" 过于口语化。改用更学术化的表达可提升 Lexical Resource (LR) 得分。同时 "negligible" 可替换为更生动的短语 "pale in significance"。
+            </div>
+          </div>
+
+          <!-- Correction 3: Word replacement -->
+          <div class="correction-item">
+            <span class="correction-tag tag-replace">替换</span>
+            <div class="correction-swap">
+              <span class="swap-label">原文</span>
+              <span class="swap-text original">which encourage people to make good choices that reduce pollution</span>
+              <span class="swap-label">建议</span>
+              <span class="swap-text suggested">which encourage people to make judicious choices that mitigate pollution</span>
+            </div>
+            <div class="correction-note">
+              <strong>说明：</strong>"good" 在学术写作中过于笼统且频次过高。建议替换为 "judicious"（审慎的）或 "sustainable"（可持续的）；"reduce" 可升级为 "mitigate" 以体现词汇多样性。
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

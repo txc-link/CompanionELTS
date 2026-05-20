@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双人游戏 · 搭子对战</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0d0d1a;
+    --bg-secondary: #14142a;
+    --bg-card: #1c1c3a;
+    --bg-card-hover: #24244a;
+    --text-primary: #eaeaf0;
+    --text-secondary: #9090b8;
+    --text-muted: #6868a0;
+    --accent-gold: #f0b429;
+    --accent-gold-light: #f8d776;
+    --accent-green: #22c55e;
+    --accent-green-bg: rgba(34, 197, 94, 0.15);
+    --accent-red: #ef4444;
+    --accent-red-bg: rgba(239, 68, 68, 0.12);
+    --accent-purple: #7c3aed;
+    --accent-cyan: #06b6d4;
+    --accent-orange: #f97316;
+    --border: #2a2a50;
+    --border-light: #3a3a60;
+    --gold-gradient: linear-gradient(135deg, #f0b429, #f59e0b);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-full: 9999px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  .page-content {
+    max-width: 600px;
+    width: 100%;
+    padding: 24px 0 48px;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+  }
+
+  /* ─── Game Grid ─── */
+  .game-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* ─── Game Card ─── */
+  .game-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .game-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-light);
+    transform: translateY(-1px);
+  }
+
+  .card-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ─── Mini Preview ─── */
+  .mini-preview {
+    background: rgba(0,0,0,0.25);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .preview-players {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .preview-player {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pv-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .pv-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .pv-vs {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .preview-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+  }
+  .preview-stat .label {
+    color: var(--text-muted);
+  }
+  .preview-stat .value {
+    color: var(--accent-gold);
+    font-weight: 600;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--gold-gradient);
+    transition: width 0.3s;
+  }
+
+  .difficulty-stars {
+    display: flex;
+    gap: 2px;
+    font-size: 12px;
+  }
+
+  /* ─── Play Button ─── */
+  .play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 0;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 2px;
+  }
+  .play-btn:hover {
+    background: rgba(255,255,255,0.12);
+  }
+  .play-btn.primary {
+    background: var(--gold-gradient);
+    color: #0d0d1a;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(240, 180, 41, 0.25);
+  }
+  .play-btn.primary:hover {
+    box-shadow: 0 6px 24px rgba(240, 180, 41, 0.4);
+  }
+
+  /* ─── Featured Card (full width) ─── */
+  .game-card.featured {
+    grid-column: 1 / -1;
+    border: 2px solid var(--accent-gold);
+    box-shadow: 0 0 0 1px var(--accent-gold), 0 4px 28px rgba(240, 180, 41, 0.10);
+    padding: 20px;
+  }
+  .game-card.featured:hover {
+    border-color: var(--accent-gold-light);
+    box-shadow: 0 0 0 1px var(--accent-gold-light), 0 6px 32px rgba(240, 180, 41, 0.18);
+  }
+
+  .featured-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .featured-header .card-icon {
+    font-size: 32px;
+  }
+  .featured-header .card-title {
+    font-size: 18px;
+  }
+
+  .featured-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+  }
+  .badge-danger {
+    background: var(--accent-red-bg);
+    color: var(--accent-red);
+  }
+  .badge-cyan {
+    background: rgba(6, 182, 212, 0.12);
+    color: var(--accent-cyan);
+  }
+</style>
+</head>
+<body>
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🎮 双人游戏</h1>
+    <span class="subtitle">搭子对战 · 组队副本 · 错题粉碎</span>
+  </div>
+
+  <!-- Game Grid -->
+  <div class="game-grid">
+
+    <!-- Card 1: 单词 PK -->
+    <div class="game-card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">单词 PK</div>
+      <div class="card-desc">同一组词限时答题比正确率</div>
+
+      <div class="mini-preview">
+        <div class="preview-players">
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #22c55e, #4ade80);">你</span>
+            <span class="pv-name">我</span>
+          </div>
+          <span class="pv-vs">⚡ VS</span>
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">A</span>
+            <span class="pv-name">Alice</span>
+          </div>
+        </div>
+        <div class="preview-stat">
+          <span class="label">本轮</span>
+          <span class="value">5 / 10 题</span>
+        </div>
+      </div>
+
+      <button class="play-btn">▶ 开始对战</button>
+    </div>
+
+    <!-- Card 2: 句型接龙 -->
+    <div class="game-card">
+      <div class="card-icon">🔗</div>
+      <div class="card-title">句型接龙</div>
+      <div class="card-desc">AI 出上句，轮流接龙</div>
+
+      <div class="mini-preview">
+        <div class="preview-players">
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #22c55e, #4ade80);">你</span>
+            <span class="pv-name">我</span>
+          </div>
+          <span class="pv-vs">🔗</span>
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #f97316, #fb923c);">L</span>
+            <span class="pv-name">Leo</span>
+          </div>
+        </div>
+        <div class="preview-stat">
+          <span class="label">上轮得分</span>
+          <span class="value">86</span>
+        </div>
+      </div>
+
+      <button class="play-btn">▶ 继续接龙</button>
+    </div>
+
+    <!-- Card 3: 错题粉碎机 -->
+    <div class="game-card">
+      <div class="card-icon">💥</div>
+      <div class="card-title">错题粉碎机</div>
+      <div class="card-desc">限时抢答错题本</div>
+
+      <div class="mini-preview">
+        <div class="preview-players">
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #22c55e, #4ade80);">你</span>
+            <span class="pv-name">我</span>
+          </div>
+          <span class="pv-vs">⚔️</span>
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #06b6d4, #22d3ee);">M</span>
+            <span class="pv-name">Mia</span>
+          </div>
+        </div>
+        <div class="preview-stat">
+          <span class="label">待粉碎</span>
+          <span class="value">12 题</span>
+        </div>
+      </div>
+
+      <button class="play-btn">▶ 开始抢答</button>
+    </div>
+
+    <!-- Card 4: 组队副本 (Featured) -->
+    <div class="game-card featured">
+      <div class="featured-header">
+        <span class="card-icon">🏆</span>
+        <span class="card-title">组队副本</span>
+      </div>
+      <div class="card-desc">搭子组队打副本，一人放弃全员受损</div>
+
+      <div class="featured-meta">
+        <div class="difficulty-stars">
+          <span>难度</span>
+          <span>⭐⭐⭐</span>
+        </div>
+        <span class="badge badge-danger">风险共担</span>
+      </div>
+
+      <div class="mini-preview">
+        <div class="preview-players">
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #22c55e, #4ade80);">你</span>
+            <span class="pv-name">我</span>
+          </div>
+          <span class="pv-vs">🤝</span>
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #a855f7, #d946ef);">N</span>
+            <span class="pv-name">Nina</span>
+          </div>
+          <span class="pv-vs">+</span>
+          <div class="preview-player">
+            <span class="pv-avatar" style="background: linear-gradient(135deg, #f97316, #fb923c);">K</span>
+            <span class="pv-name">Kai</span>
+          </div>
+        </div>
+        <div class="preview-stat">
+          <span class="label">副本进度</span>
+          <span class="value">68%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="fill" style="width: 68%;"></div>
+        </div>
+      </div>
+
+      <button class="play-btn primary">⚔️ 进入副本</button>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

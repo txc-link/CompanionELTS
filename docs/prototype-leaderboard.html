@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排行榜 · 分级联赛</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0d0d1a;
+    --bg-secondary: #14142a;
+    --bg-card: #1c1c3a;
+    --bg-card-hover: #24244a;
+    --text-primary: #eaeaf0;
+    --text-secondary: #9090b8;
+    --text-muted: #6868a0;
+    --accent-gold: #f0b429;
+    --accent-gold-light: #f8d776;
+    --accent-green: #22c55e;
+    --accent-green-bg: rgba(34, 197, 94, 0.15);
+    --accent-red: #ef4444;
+    --accent-purple: #7c3aed;
+    --accent-cyan: #06b6d4;
+    --border: #2a2a50;
+    --border-light: #3a3a60;
+    --tab-active-bg: linear-gradient(135deg, #2d2d5e, #1c1c3a);
+    --gold-gradient: linear-gradient(135deg, #f0b429, #f59e0b);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-full: 9999px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  .page-content {
+    max-width: 600px;
+    width: 100%;
+    padding: 24px 0 48px;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #f0b429, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+  }
+
+  /* ─── Tier Tabs ─── */
+  .tier-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tier-tabs::-webkit-scrollbar { display: none; }
+  .tier-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tier-tab:hover {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+  }
+  .tier-tab.active {
+    background: var(--gold-gradient);
+    color: #1a1a2e;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 20px rgba(240, 180, 41, 0.25);
+  }
+
+  /* ─── League Info ─── */
+  .league-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .league-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-primary);
+  }
+  .countdown {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--accent-gold);
+    background: rgba(240, 180, 41, 0.12);
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .countdown .icon { font-size: 14px; }
+
+  /* ─── Leaderboard List ─── */
+  .leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .rank-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    position: relative;
+  }
+  .rank-entry:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-light);
+  }
+
+  /* Current user highlight */
+  .rank-entry.current-user {
+    border-color: var(--accent-green);
+    background: var(--accent-green-bg);
+    box-shadow: 0 0 0 1px var(--accent-green), 0 4px 16px rgba(34, 197, 94, 0.15);
+  }
+  .you-tag {
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    background: var(--accent-green);
+    color: #0d0d1a;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.3px;
+  }
+
+  .rank-number {
+    width: 28px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .rank-medal {
+    width: 28px;
+    text-align: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .player-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .player-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  .score {
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .score .flower { font-size: 14px; }
+
+  /* ─── View My Rank Button ─── */
+  .view-rank-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--gold-gradient);
+    color: #0d0d1a;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(240, 180, 41, 0.2);
+  }
+  .view-rank-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(240, 180, 41, 0.35);
+  }
+  .view-rank-btn:active {
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🏆 排行榜</h1>
+    <span class="subtitle">分级联赛 · 按目标分数段自动分组</span>
+  </div>
+
+  <!-- Tier Tabs -->
+  <div class="tier-tabs">
+    <span class="tier-tab">🟢 青铜</span>
+    <span class="tier-tab">🟡 白银</span>
+    <span class="tier-tab active">🔴 黄金</span>
+    <span class="tier-tab">🟣 钻石</span>
+    <span class="tier-tab">🏆 王者</span>
+  </div>
+
+  <!-- League Info -->
+  <div class="league-info">
+    <span class="league-title">黄金组（目标 6.0-6.5）</span>
+    <span class="countdown">
+      <span class="icon">⏳</span>
+      本周还剩 3 天
+    </span>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard">
+
+    <!-- 1st -->
+    <div class="rank-entry">
+      <span class="rank-medal">🥇</span>
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #f0b429, #f59e0b);">E</div>
+      <div class="player-info">
+        <div class="player-name">EllaChen</div>
+      </div>
+      <div class="score">
+        <span class="flower">🌸</span>
+        6.48
+      </div>
+    </div>
+
+    <!-- 2nd -->
+    <div class="rank-entry">
+      <span class="rank-medal">🥈</span>
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">M</div>
+      <div class="player-info">
+        <div class="player-name">MarcusW</div>
+      </div>
+      <div class="score">
+        <span class="flower">🌸</span>
+        6.42
+      </div>
+    </div>
+
+    <!-- 3rd -->
+    <div class="rank-entry">
+      <span class="rank-medal">🥉</span>
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #06b6d4, #22d3ee);">S</div>
+      <div class="player-info">
+        <div class="player-name">SophiaL</div>
+      </div>
+      <div class="score">
+        <span class="flower">🌸</span>
+        6.35
+      </div>
+    </div>
+
+    <!-- 4th -->
+    <div class="rank-entry">
+      <span class="rank-number">4</span>
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #ef4444, #f87171);">J</div>
+      <div class="player-info">
+        <div class="player-name">JayZ</div>
+      </div>
+      <div class="score">
+        <span class="flower">🌸</span>
+        6.28
+      </div>
+    </div>
+
+    <!-- 5th - current user -->
+    <div class="rank-entry current-user">
+      <span class="you-tag">✦ 你</span>
+      <span class="rank-number">5</span>
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #22c55e, #4ade80);">你</div>
+      <div class="player-info">
+        <div class="player-name">我</div>
+      </div>
+      <div class="score">
+        <span class="flower">🌸</span>
+        6.20
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Action Button -->
+  <button class="view-rank-btn">
+    🔍 查看我的排名
+  </button>
+
+</div>
+</body>
+</html>

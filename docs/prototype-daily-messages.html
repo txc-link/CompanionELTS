@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 每日寄语 · 雅思搭子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --danger: #e85b4b;
+  --warning: #e8b84b;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 600;
+}
+.page-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* ── Header ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.page-header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-subtle);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Today's Featured Message ── */
+.featured-card {
+  background: linear-gradient(135deg, rgba(232,184,75,0.12), rgba(196,137,58,0.06));
+  border: 1px solid rgba(232,184,75,0.2);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.featured-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent-gold), var(--accent-amber));
+  border-radius: 0 2px 2px 0;
+}
+.featured-date {
+  font-size: 13px;
+  color: var(--accent-amber);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.featured-msg {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+.stats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(108,197,108,0.12);
+  color: var(--accent-green);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── Stats Snapshot ── */
+.stats-snapshot {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-subtle);
+}
+.stats-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stats-person .avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+.avatar-you { background: rgba(108,197,108,0.2); color: var(--accent-green); }
+.avatar-pal { background: rgba(91,155,213,0.2); color: var(--info); }
+.stats-check { color: var(--accent-green); font-size: 16px; }
+.stats-divider { color: var(--text-muted); }
+
+/* ── History Messages ── */
+.history-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: opacity .2s;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item.faded {
+  opacity: 0.5;
+}
+.history-item.faded:hover { opacity: 0.7; }
+.history-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.history-msg {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.history-msg .highlight-text {
+  color: var(--accent-green);
+}
+
+/* ── Buttons ── */
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+.btn-outline {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+}
+.btn-outline:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  background: rgba(108,197,108,0.06);
+}
+.btn-primary {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-amber));
+  color: var(--bg-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  text-align: center;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(232,184,75,0.25);
+}
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+}
+.empty-illustration {
+  width: 120px; height: 120px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 2px dashed var(--border-subtle);
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 40px;
+  color: var(--text-muted);
+}
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.empty-state p {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 280px;
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <!-- ── Header ── -->
+  <div class="page-header">
+    <h1>&#128140; AI 每日寄语</h1>
+    <div class="subtitle">属于你和搭子的学习回忆录</div>
+  </div>
+
+  <!-- ── Today's Featured Message ── -->
+  <div class="featured-card">
+    <div class="featured-date">&#128197; 2026 年 5 月 21 日 · 今日寄语</div>
+    <div class="featured-msg">
+      &#127919; 今天超棒！你和小明都完成了 100% 学习任务。<br>
+      连续 7 天打卡成就达成！备考路上有搭子一起，7 分稳了 &#128170;
+    </div>
+    <div class="stats-badge">
+      &#128200; 连续打卡 7 天 &#183; 今日完成率 100%
+    </div>
+  </div>
+
+  <!-- ── Stats Snapshot ── -->
+  <div class="stats-snapshot">
+    <div class="stats-person">
+      <span class="avatar avatar-you">你</span>
+      <span><strong>4.0h</strong> &#9989;</span>
+    </div>
+    <span class="stats-divider">|</span>
+    <div class="stats-person">
+      <span class="avatar avatar-pal">明</span>
+      <span><strong>4.0h</strong> &#9989;</span>
+    </div>
+  </div>
+
+  <!-- ── History ── -->
+  <div class="card">
+    <div class="card-title">&#128214; 历史寄语</div>
+
+    <!-- 5 天前 -->
+    <div class="history-item faded">
+      <div class="history-date">2026 年 5 月 20 日</div>
+      <div class="history-msg">
+        &#127775; 第 6 天打卡达成！你完成了 3 套阅读真题精练，<span class="highlight-text">正确率提升 12%</span>。小明完成了 2 篇大作文。稳步前进中！
+      </div>
+    </div>
+
+    <!-- 4 天前 -->
+    <div class="history-item faded">
+      <div class="history-date">2026 年 5 月 19 日</div>
+      <div class="history-msg">
+        &#127942; 今日亮点！你的听力 Section 3 全对，小明口语 Part 2 首次突破 2 分钟。互相抽背了 50 个同义词，<span class="highlight-text">正确率 92%</span>。
+      </div>
+    </div>
+
+    <!-- 3 天前 -->
+    <div class="history-item faded">
+      <div class="history-date">2026 年 5 月 18 日</div>
+      <div class="history-msg">
+        &#128218; 你和小明今天的学习时长都超过了 3.5 小时。一起完成了一篇雅思大作文互批，你给小明的逻辑结构打了 8 分。
+      </div>
+    </div>
+
+    <!-- 2 天前 -->
+    <div class="history-item faded">
+      <div class="history-date">2026 年 5 月 17 日</div>
+      <div class="history-msg">
+        &#127800; 周末加练日！你们一起模拟了一套完整听力 + 阅读。你的听力从 6.5 提到 7.0，小明的阅读速度提升了 15%。加油！
+      </div>
+    </div>
+
+    <!-- 1 天前 -->
+    <div class="history-item faded">
+      <div class="history-date">2026 年 5 月 16 日</div>
+      <div class="history-msg">
+        &#127881; 欢迎小明加入学习搭子！今天互相制定了本周学习计划，目标是听力双双上 7.0。一起背完了 C17 全部听力词汇。
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Action Buttons ── -->
+  <div class="action-row">
+    <button class="btn-outline">&#128214; 寄语墙</button>
+    <button class="btn-primary">&#128247; 分享今日寄语</button>
+  </div>
+
+  <!-- ── Empty State (hidden by default, shown as reference) ── -->
+  <div class="card" style="display:none;" id="emptyStateDemo">
+    <div class="empty-state">
+      <div class="empty-illustration">&#128140;</div>
+      <h3>还没有每日寄语</h3>
+      <p>开始和你的学习搭子一起打卡，AI 会为你们生成专属的学习回忆录。</p>
+    </div>
+  </div>
+
+  <!-- ── Footnote: empty state reference ── -->
+  <div style="margin-top:4px; font-size:12px; color:var(--text-muted); text-align:center;">
+    &#128161; 无寄语时展示空状态占位图（上方卡片以 <code>display:none</code> 保留供参考）
+  </div>
+
+</div>
+
+</body>
+</html>

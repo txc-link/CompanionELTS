@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阅读精讲</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&family=Fraunces:opsz,wght@9..144,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+.page-content {
+  max-width: 900px;
+  width: 100%;
+}
+.header { margin-bottom: 22px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; }
+.header-left { }
+.header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.header .subtitle { font-size: 15px; color: var(--text-secondary); margin-top: 4px; }
+.timer-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  font-family: 'Fraunces', serif;
+  white-space: nowrap;
+}
+
+/* passage header */
+.passage-hdr {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap:wrap; gap:8px;
+}
+.passage-hdr .passage-title { font-weight: 600; font-size:15px; }
+.passage-hdr .passage-meta { font-size:13px; color: var(--text-muted); display:flex; gap:14px; }
+
+/* main layout */
+.main-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+@media (max-width:700px) { .main-grid { grid-template-columns:1fr; } }
+
+/* left col */
+.left-col {}
+
+/* question tabs */
+.tab-row { display:flex; gap:2px; margin-bottom:14px; }
+.tab {
+  padding: 8px 16px;
+  font-size:13px;
+  font-weight:500;
+  background: var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor:pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.tab.active {
+  background: var(--bg-elevated);
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+/* question card */
+.question-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.question-card .q-label { font-size:13px; color:var(--text-muted); margin-bottom:8px; }
+.question-card .q-text { font-size:14px; line-height:1.6; color:var(--text-primary); margin-bottom:14px; }
+.answer-row { display:flex; gap:18px; margin-bottom:12px; flex-wrap:wrap; }
+.answer-row .user-ans { font-size:13px; }
+.answer-row .user-ans.wrong { color:#e74c3c; }
+.answer-row .correct-ans { font-size:13px; color:var(--accent-green); }
+
+/* explanation */
+.explain-panel {
+  background: rgba(91,155,213,0.06);
+  border-left: 3px solid var(--info);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 16px;
+  font-size:13px;
+  line-height:1.6;
+  color: var(--text-secondary);
+}
+.key-location {
+  margin-top:8px;
+  background: rgba(110,197,110,0.1);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size:12px;
+  color: var(--accent-green);
+  border:1px solid rgba(110,197,110,0.2);
+}
+
+/* right col */
+.right-col {}
+
+/* lyrics panel */
+.lyrics-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.lyrics-panel .panel-title {
+  font-size:14px; font-weight:600; margin-bottom:12px;
+  display:flex; justify-content:space-between;
+}
+.lyrics-panel .panel-title .toggle-btn {
+  font-size:12px; color: var(--info); cursor:pointer; border:none;
+  background:none; font-family:'DM Sans',sans-serif;
+}
+.lyric-line {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size:14px;
+  line-height:1.7;
+  cursor: default;
+}
+.lyric-line:last-child { border-bottom:none; }
+.lyric-line .en { color: var(--text-primary); }
+.lyric-line .zh {
+  display:none; color:var(--text-muted); font-size:13px; margin-top:2px;
+}
+.lyric-line.show-zh .zh { display:block; }
+.lyric-line.highlight {
+  background: rgba(110,197,110,0.08);
+  border-radius:4px;
+  padding-left:8px;
+  padding-right:8px;
+  margin-left:-8px;
+  margin-right:-8px;
+}
+.lyric-line .vocab {
+  cursor:pointer;
+  border-bottom: 1px dashed var(--accent-gold);
+  color: var(--accent-gold);
+  position:relative;
+}
+.lyric-line .vocab .tooltip {
+  display:none;
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-sm);
+  padding:6px 12px;
+  font-size:12px;
+  color:var(--text-primary);
+  white-space:nowrap;
+  z-index:10;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+}
+.lyric-line .vocab:hover .tooltip { display:block; }
+
+/* vocab section at bottom */
+.vocab-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+}
+.vocab-section .vocab-title { font-weight:600; font-size:14px; margin-bottom:10px; color:var(--accent-gold); }
+.vocab-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.vocab-chip {
+  background: var(--bg-elevated);
+  border:1px solid var(--border-subtle);
+  border-radius:999px;
+  padding:5px 14px;
+  font-size:12px;
+  color: var(--text-secondary);
+  cursor:default;
+  transition: border-color 0.15s;
+}
+.vocab-chip:hover { border-color:var(--accent-gold); color:var(--accent-gold); }
+</style>
+</head>
+<body>
+<div class="page-content">
+  <div class="header">
+    <div class="header-left">
+      <h1>📖 阅读精讲</h1>
+      <div class="subtitle">长难句拆解 · 题型技巧 · 逐题解析</div>
+    </div>
+    <div class="timer-badge">⏱️ 15:23 剩余</div>
+  </div>
+
+  <!-- Passage header -->
+  <div class="passage-hdr">
+    <span class="passage-title">Passage 1</span>
+    <span class="passage-meta">
+      <span>📝 13 questions</span>
+      <span>⏱️ 20 minutes</span>
+    </span>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT COL -->
+    <div class="left-col">
+      <!-- Tabs -->
+      <div class="tab-row">
+        <div class="tab active">判断题 T/F/NG</div>
+        <div class="tab">匹配题</div>
+        <div class="tab">Heading题</div>
+      </div>
+
+      <!-- Question -->
+      <div class="question-card">
+        <div class="q-label">Question 1 of 13</div>
+        <div class="q-text">The government's policy on renewable energy has been successful in reducing carbon emissions.</div>
+        <div class="answer-row">
+          <span class="user-ans wrong">❌ 你的答案: TRUE</span>
+          <span class="correct-ans">✅ 正确答案: FALSE</span>
+        </div>
+        <div class="explain-panel">
+          <strong>解析：</strong>原文指出该政策仅"partially successful"（部分成功），排放"decreased by only 2%"（仅减少2%），远未达到"successful"的程度，因此选FALSE。
+        </div>
+        <div class="key-location">
+          📍 关键定位: "...the policy was deemed <strong>partially successful</strong>, as emissions <strong>decreased by only 2%</strong> over the five-year period..."
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="lyrics-panel" style="border-color:var(--border-subtle);">
+        <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+          <strong style="color:var(--text-secondary);">📄 段落预览</strong><br><br>
+          In recent years, the government has implemented a series of policies aimed at promoting renewable energy adoption across the industrial sector. These initiatives included tax incentives for solar panel installation, subsidies for wind farm development, and grants for research into next-generation battery storage technology. However, a comprehensive review published last month revealed that the policy was deemed partially successful, as emissions decreased by only 2% over the five-year period. Critics argue that the targets were not ambitious enough...
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="right-col">
+      <!-- Lyrics reading panel -->
+      <div class="lyrics-panel">
+        <div class="panel-title">
+          <span>🎵 逐行精读</span>
+          <button class="toggle-btn" onclick="toggleTranslation()">显示译文</button>
+        </div>
+        <div id="lyricsContainer">
+          <div class="lyric-line highlight">
+            <span class="en">In recent years, the government has implemented a series of policies aimed at promoting <span class="vocab">renewable<span class="tooltip">可再生的 /rɪˈnjuːəbl/</span></span> energy adoption...</span>
+            <div class="zh">近年来，政府实施了一系列旨在推广可再生能源采用的政策...</div>
+          </div>
+          <div class="lyric-line">
+            <span class="en">These initiatives included tax <span class="vocab">incentives<span class="tooltip">激励措施 /ɪnˈsentɪvz/</span></span> for solar panel installation...</span>
+            <div class="zh">这些举措包括对太阳能电池板安装的税收激励...</div>
+          </div>
+          <div class="lyric-line">
+            <span class="en">...subsidies for wind farm development, and grants for research into next-generation battery storage technology.</span>
+            <div class="zh">对风电场开发的补贴，以及用于下一代电池存储技术研究的资助。</div>
+          </div>
+          <div class="lyric-line">
+            <span class="en">However, a comprehensive review published last month revealed that the policy was deemed partially successful...</span>
+            <div class="zh">然而，上月发布的一项全面评估显示该政策仅被视为部分成功...</div>
+          </div>
+          <div class="lyric-line highlight">
+            <span class="en">...as emissions <span class="vocab">decreased<span class="tooltip">减少 /dɪˈkriːst/</span></span> by only 2% over the five-year period.</span>
+            <div class="zh">因为五年期间排放量仅减少了2%。</div>
+          </div>
+          <div class="lyric-line">
+            <span class="en">Critics argue that the targets were not ambitious enough to drive meaningful change.</span>
+            <div class="zh">评论人士认为，这些目标不够有雄心，无法推动有意义的变革。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vocabulary section -->
+      <div class="vocab-section">
+        <div class="vocab-title">📘 本段重点词汇</div>
+        <div class="vocab-grid">
+          <span class="vocab-chip">renewable /rɪˈnjuːəbl/ 可再生的</span>
+          <span class="vocab-chip">incentive /ɪnˈsentɪv/ 激励</span>
+          <span class="vocab-chip">subsidy /ˈsʌbsədi/ 补贴</span>
+          <span class="vocab-chip">comprehensive /ˌkɒmprɪˈhensɪv/ 全面的</span>
+          <span class="vocab-chip">deem /diːm/ 认为</span>
+          <span class="vocab-chip">ambitious /æmˈbɪʃəs/ 有雄心的</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTranslation() {
+  const lines = document.querySelectorAll('.lyric-line');
+  const btn = document.querySelector('.toggle-btn');
+  const showingAll = btn.textContent === '隐藏译文';
+  lines.forEach(line => line.classList.toggle('show-zh', !showingAll));
+  btn.textContent = showingAll ? '显示译文' : '隐藏译文';
+}
+
+// Timer countdown
+let seconds = 15 * 60 + 23;
+const timerEl = document.querySelector('.timer-badge');
+setInterval(() => {
+  seconds--;
+  if (seconds <= 0) { seconds = 0; }
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  timerEl.textContent = `⏱️ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} 剩余`;
+}, 1000);
+</script>
+</body>
+</html>

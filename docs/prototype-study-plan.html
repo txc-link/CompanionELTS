@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI学习规划</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&family=Fraunces:opsz,wght@9..144,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+.page-content {
+  max-width: 860px;
+  width: 100%;
+}
+.header { margin-bottom: 28px; }
+.header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.header .subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+/* phase */
+.phase-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.phase-label { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.phase-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.phase-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500;
+}
+.phase-item.current {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-green);
+  color: var(--text-primary);
+}
+.phase-item.past {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+.phase-item .phase-progress {
+  font-size: 12px;
+  color: var(--accent-green);
+  font-weight: 600;
+  background: rgba(110,197,110,0.12);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+/* daily */
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+}
+.schedule { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.time-block {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  transition: border-color 0.2s;
+}
+.time-block:hover { border-color: rgba(110,197,110,0.3); }
+.time-block .time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  min-width: 100px;
+  font-family: 'Fraunces', serif;
+}
+.time-block .activity {
+  font-size: 14px;
+  color: var(--text-primary);
+  flex: 1;
+}
+.time-block .tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ai card */
+.ai-card {
+  background: linear-gradient(135deg, rgba(110,197,110,0.06), rgba(232,184,75,0.06));
+  border: 1px solid rgba(110,197,110,0.2);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ai-card .ai-icon { font-size: 24px; flex-shrink:0; }
+.ai-card .ai-text { font-size: 14px; color: var(--text-secondary); line-height:1.6; }
+
+/* week */
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 24px; }
+.week-day {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 6px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.week-day.today {
+  border-color: var(--accent-green);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 10px rgba(110,197,110,0.12);
+}
+.week-day .day-name { font-size: 11px; color: var(--text-muted); margin-bottom:4px; }
+.week-day .day-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Fraunces', serif;
+}
+.week-day.today .day-num { color: var(--accent-green); }
+.week-day .day-hours {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* buttons */
+.actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: var(--accent-green);
+  color: #0a120c;
+  border-color: var(--accent-green);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: #7dd67d;
+  box-shadow: 0 0 16px rgba(110,197,110,0.25);
+}
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--border-subtle);
+}
+</style>
+</head>
+<body>
+<div class="page-content">
+  <div class="header">
+    <h1>🧠 AI 学习规划</h1>
+    <div class="subtitle">分层路径 · 薄弱项诊断 · 每日目标</div>
+  </div>
+
+  <!-- Phase -->
+  <div class="phase-section">
+    <div class="phase-label">当前学习阶段</div>
+    <div class="phase-row">
+      <div class="phase-item past">
+        <span>🟢</span>
+        <span>入门阶段</span>
+        <span>✅</span>
+      </div>
+      <div class="phase-item current">
+        <span>🔴</span>
+        <span>强化阶段</span>
+        <span class="phase-progress">68%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily -->
+  <div class="section-title">📋 今日计划 · 2026-05-21</div>
+  <div class="schedule">
+    <div class="time-block">
+      <span class="time">09:00-10:00</span>
+      <span class="activity">🎧 听力 Section 3 精练</span>
+      <span class="tag">听力</span>
+    </div>
+    <div class="time-block">
+      <span class="time">10:15-11:45</span>
+      <span class="activity">📖 阅读 T/F/NG 专项</span>
+      <span class="tag">阅读</span>
+    </div>
+    <div class="time-block">
+      <span class="time">14:00-15:00</span>
+      <span class="activity">✍️ 写作 Task 2 四段式</span>
+      <span class="tag">写作</span>
+    </div>
+    <div class="time-block">
+      <span class="time">15:30-16:00</span>
+      <span class="activity">🎤 口语 Part 2 话题卡</span>
+      <span class="tag">口语</span>
+    </div>
+  </div>
+
+  <!-- AI recommendation -->
+  <div class="ai-card">
+    <span class="ai-icon">💡</span>
+    <div class="ai-text">
+      <strong style="color:var(--accent-green);">AI 建议</strong><br>
+      基于近 7 天数据，建议增加写作时间至 1.5h，阅读正确率有所回升可适当减少
+    </div>
+  </div>
+
+  <!-- Week overview -->
+  <div class="section-title">📅 本周学习概览</div>
+  <div class="week-grid" id="weekGrid"></div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary">🚀 查看冲刺阶段计划</button>
+    <button class="btn btn-secondary">📅 手动调整计划</button>
+  </div>
+</div>
+
+<script>
+const weekDays = [
+  { name:'一', num:19, hours:'4.5h' },
+  { name:'二', num:20, hours:'5h' },
+  { name:'三', num:21, hours:'3.5h', today:true },
+  { name:'四', num:22, hours:'4h' },
+  { name:'五', num:23, hours:'6h' },
+  { name:'六', num:24, hours:'2h' },
+  { name:'日', num:25, hours:'—' },
+];
+
+const grid = document.getElementById('weekGrid');
+weekDays.forEach(d => {
+  const el = document.createElement('div');
+  el.className = `week-day${d.today ? ' today' : ''}`;
+  el.innerHTML = `<div class="day-name">${d.name}</div><div class="day-num">${d.num}</div><div class="day-hours">${d.hours}</div>`;
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>

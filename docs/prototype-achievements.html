@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成就勋章</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&family=Fraunces:opsz,wght@9..144,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+.page-content {
+  max-width: 900px;
+  width: 100%;
+}
+/* header */
+.header { margin-bottom: 28px; }
+.header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.header .subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-weight: 400;
+}
+/* progress bar */
+.progress-wrap {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-subtle);
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar {
+  height: 10px;
+  background: var(--bg-elevated);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 53%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-gold));
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+/* stats */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  text-align: center;
+}
+.stat-card .stat-icon { font-size: 22px; display:block; margin-bottom:4px; }
+.stat-card .stat-value { font-size: 18px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif; }
+.stat-card .stat-label { font-size: 12px; color: var(--text-muted); margin-top:2px; }
+/* grid */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.badge:hover {
+  transform: translateY(-3px);
+}
+.badge.earned {
+  border-color: rgba(110,197,110,0.25);
+  box-shadow: 0 0 16px rgba(110,197,110,0.08);
+}
+.badge.earned:hover {
+  box-shadow: 0 0 24px rgba(110,197,110,0.2);
+  border-color: var(--accent-green);
+}
+.badge.locked {
+  opacity: 0.6;
+  cursor: default;
+}
+.badge.locked:hover {
+  transform: none;
+}
+.badge .icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.badge.earned .icon {
+  filter: drop-shadow(0 0 8px rgba(110,197,110,0.4));
+}
+.badge .name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.badge .meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.badge .lock-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 14px;
+  opacity: 0.5;
+}
+/* modal overlay */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.show {
+  display: flex;
+}
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 40px 36px 32px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  animation: modalIn 0.35s ease;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:scale(0.9) translateY(16px); }
+  to { opacity:1; transform:scale(1) translateY(0); }
+}
+.modal .modal-icon { font-size: 56px; margin-bottom: 12px; }
+.modal .modal-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 8px;
+}
+.modal .modal-desc { font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; }
+.modal .modal-close {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 32px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.2s;
+}
+.modal .modal-close:hover { background: var(--border-subtle); }
+</style>
+</head>
+<body>
+<div class="page-content">
+  <div class="header">
+    <h1>🎖️ 成就勋章</h1>
+    <div class="subtitle">已获得 8/15 · 继续加油！</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>总完成度</span>
+      <span>53%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" style="width:53%"></div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-icon">🏅</span>
+      <div class="stat-value">8</div>
+      <div class="stat-label">已获得勋章</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">🔥</span>
+      <div class="stat-value">7 天</div>
+      <div class="stat-label">连续打卡</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon">🌸</span>
+      <div class="stat-value">42</div>
+      <div class="stat-label">红花累计</div>
+    </div>
+  </div>
+
+  <div class="achievements-grid" id="achievementsGrid"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent">
+    <div class="modal-icon" id="modalIcon">🔥</div>
+    <div class="modal-title" id="modalTitle">首次打卡</div>
+    <div class="modal-desc" id="modalDesc">解锁于 2026-05-15</div>
+    <button class="modal-close" onclick="closeModal()">关 闭</button>
+  </div>
+</div>
+
+<script>
+const badges = [
+  { icon:'🏅', name:'首次打卡', earned:true,  date:'2026-05-15' },
+  { icon:'🔥', name:'连续7天',  earned:true,  date:'2026-05-20' },
+  { icon:'✍️', name:'首次写作', earned:true,  date:'2026-05-16' },
+  { icon:'🎤', name:'首次口语', earned:true,  date:'2026-05-17' },
+  { icon:'📈', name:'提分0.5',  earned:true,  date:'2026-05-19' },
+  { icon:'🌸', name:'红花50',   earned:true,  date:'2026-05-21' },
+  { icon:'💑', name:'双人达标7天', earned:true, date:'2026-05-20' },
+  { icon:'📝', name:'作文10篇', earned:true,  date:'2026-05-18' },
+  { icon:'⚡', name:'连续30天',  earned:false, progress:'67%' },
+  { icon:'🎯', name:'达成目标分', earned:false, progress:'42%' },
+  { icon:'👑', name:'月榜第1',   earned:false, progress:'23%' },
+  { icon:'💯', name:'满分作文',  earned:false, progress:'35%' },
+  { icon:'🏆', name:'胜场20',    earned:false, progress:'55%' },
+  { icon:'🌸', name:'红花100',   earned:false, progress:'42%' },
+  { icon:'📚', name:'词库完成',  earned:false, progress:'18%' },
+];
+
+const grid = document.getElementById('achievementsGrid');
+
+badges.forEach(b => {
+  const div = document.createElement('div');
+  div.className = `badge ${b.earned ? 'earned' : 'locked'}`;
+
+  if (!b.earned) {
+    const lock = document.createElement('span');
+    lock.className = 'lock-overlay';
+    lock.textContent = '🔒';
+    div.appendChild(lock);
+  }
+
+  const iconEl = document.createElement('div');
+  iconEl.className = 'icon';
+  iconEl.textContent = b.icon;
+  div.appendChild(iconEl);
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'name';
+  nameEl.textContent = b.name;
+  div.appendChild(nameEl);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'meta';
+  metaEl.textContent = b.earned ? b.date : b.progress;
+  div.appendChild(metaEl);
+
+  if (b.earned) {
+    div.addEventListener('click', () => showModal(b.icon, b.name, `解锁于 ${b.date}`));
+  }
+
+  grid.appendChild(div);
+});
+
+function showModal(icon, title, desc) {
+  document.getElementById('modalIcon').textContent = icon;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalDesc').textContent = desc;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+</script>
+</body>
+</html>

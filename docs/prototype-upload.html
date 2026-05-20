@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上传中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-primary:#0f1a12;--bg-card:#1e3022;--bg-elevated:#243828;--accent-green:#6ec56e;--accent-gold:#e8b84b;--text-primary:#f4f0e6;--text-secondary:#b8c4a8;--text-muted:#7a9170;--border-subtle:#2a3d2c;--info:#5b9bd5;--danger:#e85b4b;--warning:#e8b84b;--radius-md:16px;--radius-sm:8px}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px}
+.page-content{max-width:780px;width:100%;padding:32px 0 80px}
+/* header */
+.header{margin-bottom:32px}
+.header h1{font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--text-primary);letter-spacing:-0.3px;display:flex;align-items:center;gap:10px}
+.header .subtitle{font-size:14px;color:var(--text-secondary);margin-top:6px;letter-spacing:0.2px}
+/* upload zone */
+.upload-zone{border:2px dashed var(--border-subtle);border-radius:var(--radius-md);padding:40px 24px;text-align:center;cursor:pointer;transition:all .25s;background:var(--bg-card);margin-bottom:24px}
+.upload-zone:hover{border-color:var(--accent-green);background:var(--bg-elevated)}
+.upload-zone .icon{font-size:42px;margin-bottom:10px;display:block}
+.upload-zone .main-text{font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+.upload-zone .hint-text{font-size:13px;color:var(--text-muted)}
+/* format badges */
+.format-badges{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.badge .dot{width:8px;height:8px;border-radius:50%}
+.badge.pdf .dot{background:#f44a4a}
+.badge.docx .dot{background:#4a8bf4}
+.badge.img .dot{background:#6ec56e}
+.badge.mp3 .dot{background:#e8b84b}
+/* section title */
+.section-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* progress */
+.progress-card{background:var(--bg-card);border-radius:var(--radius-md);padding:18px 20px;margin-bottom:28px;border:1px solid var(--border-subtle)}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.progress-header .fname{font-size:14px;font-weight:500;color:var(--text-primary)}
+.progress-header .pct{font-size:13px;color:var(--accent-green);font-weight:600}
+.progress-track{height:8px;background:var(--bg-elevated);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;width:65%;border-radius:99px;background:linear-gradient(90deg,var(--accent-green),#8cd88c)}
+/* result cards */
+.result-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.result-card{background:var(--bg-card);border-radius:var(--radius-md);padding:16px 18px;border:1px solid var(--border-subtle);display:flex;align-items:center;gap:14px}
+.result-card .type-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.type-icon.pdf{background:#4a1f1f;color:#f44a4a}
+.type-icon.doc{background:#1a2f4a;color:#4a8bf4}
+.type-icon.img{background:#1a3a1a;color:#6ec56e}
+.result-card .info{flex:1;min-width:0}
+.result-card .info .fname{font-size:14px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-card .info .meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.status-badge.done{background:#1a3a1a;color:var(--accent-green);border:1px solid #2a5a2a}
+.status-badge.ocr{background:#1a2f3a;color:var(--info);border:1px solid #2a4a5a}
+.status-badge.text{background:#3a2f1a;color:var(--warning);border:1px solid #5a4a2a}
+.status-badge.pending{background:#2a2a2a;color:var(--text-secondary);border:1px solid var(--border-subtle)}
+.toggle-btn{width:36px;height:22px;border-radius:99px;border:none;cursor:pointer;position:relative;flex-shrink:0;transition:all .25s;padding:0}
+.toggle-btn.on{background:var(--accent-green)}
+.toggle-btn.off{background:var(--bg-elevated);border:1px solid var(--border-subtle)}
+.toggle-btn .knob{width:16px;height:16px;border-radius:50%;background:var(--text-primary);position:absolute;top:3px;transition:all .25s}
+.toggle-btn.on .knob{right:3px}
+.toggle-btn.off .knob{left:3px}
+.toggle-label{font-size:11px;color:var(--text-muted);flex-shrink:0}
+/* footer */
+.footer-copyright{text-align:center;margin-top:20px}
+.btn-copyright{background:transparent;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px 22px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s}
+.btn-copyright:hover{background:var(--bg-elevated);color:var(--text-primary);border-color:var(--accent-gold)}
+/* modal overlay */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);max-width:440px;width:90%;padding:28px;position:relative}
+.modal-box h3{font-family:'Fraunces',serif;font-size:18px;color:var(--text-primary);margin-bottom:12px}
+.modal-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:6px}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer}
+.modal-close:hover{color:var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>📁 上传中心</h1>
+    <div class="subtitle">拖拽上传 · AI 自动解析 · 搭子共享</div>
+  </div>
+
+  <!-- Upload Zone -->
+  <div class="upload-zone">
+    <span class="icon">📂</span>
+    <div class="main-text">拖拽文件到此处</div>
+    <div class="hint-text">支持 PDF/Word/图片/音频</div>
+  </div>
+
+  <!-- Format Badges -->
+  <div class="format-badges">
+    <span class="badge pdf"><span class="dot"></span>PDF</span>
+    <span class="badge docx"><span class="dot"></span>DOCX</span>
+    <span class="badge img"><span class="dot"></span>PNG/JPG</span>
+    <span class="badge mp3"><span class="dot"></span>MP3</span>
+  </div>
+
+  <!-- Upload Progress -->
+  <div class="section-title">⏫ 上传进度</div>
+  <div class="progress-card">
+    <div class="progress-header">
+      <span class="fname">剑桥雅思18_T1.pdf</span>
+      <span class="pct">65%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- AI Parsed Results -->
+  <div class="section-title">🤖 AI 解析结果</div>
+  <div class="result-cards">
+
+    <div class="result-card">
+      <div class="type-icon pdf">📄</div>
+      <div class="info">
+        <div class="fname">剑桥雅思18_T1.pdf</div>
+        <div class="meta">2.4 MB &middot; 自动解析</div>
+      </div>
+      <span class="status-badge done">解析完成 ✅</span>
+      <label class="toggle-label">搭子可见</label>
+      <button class="toggle-btn on"><span class="knob"></span></button>
+    </div>
+
+    <div class="result-card">
+      <div class="type-icon img">🖼️</div>
+      <div class="info">
+        <div class="fname">笔记扫描_page3.png</div>
+        <div class="meta">1.1 MB &middot; OCR 识别</div>
+      </div>
+      <span class="status-badge ocr">OCR 完成 ✅</span>
+      <label class="toggle-label">搭子可见</label>
+      <button class="toggle-btn off"><span class="knob"></span></button>
+    </div>
+
+    <div class="result-card">
+      <div class="type-icon doc">📝</div>
+      <div class="info">
+        <div class="fname">口语素材整理.docx</div>
+        <div class="meta">856 KB &middot; 转文字中</div>
+      </div>
+      <span class="status-badge pending">转文字 ✅</span>
+      <label class="toggle-label">搭子可见</label>
+      <button class="toggle-btn on"><span class="knob"></span></button>
+    </div>
+
+  </div>
+
+  <!-- Copyright Notice Button -->
+  <div class="footer-copyright">
+    <button class="btn-copyright" onclick="document.getElementById('copyright-modal').classList.add('open')">⚠️ 版权提示</button>
+  </div>
+
+</div>
+
+<!-- Copyright Modal -->
+<div class="modal-overlay" id="copyright-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="this.parentElement.parentElement.classList.remove('open')">&times;</button>
+    <h3>⚠️ 版权提示</h3>
+    <p>您上传的所有资料仅供个人学习使用。请勿将受版权保护的资料用于商业用途或公开发布。</p>
+    <p>AI 解析结果仅供参考，不构成专业建议。如需引用，请核对原始出处。</p>
+    <p style="margin-top:12px;color:var(--text-muted);font-size:12px">如涉及侵权内容，请联系我们处理。</p>
+  </div>
+</div>
+
+</body>
+</html>

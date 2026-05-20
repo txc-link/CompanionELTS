@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS 词汇工具 — Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&display=swap');
+
+  :root {
+    --bg-primary: #0f1a12;
+    --bg-card: #1e3022;
+    --bg-elevated: #243828;
+    --accent-green: #6ec56e;
+    --accent-gold: #e8b84b;
+    --accent-amber: #c4893a;
+    --text-primary: #f4f0e6;
+    --text-secondary: #b8c4a8;
+    --text-muted: #7a9170;
+    --border-subtle: #2a3d2c;
+    --radius-md: 16px;
+    --radius-sm: 8px;
+    --radius-lg: 24px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  .page-content {
+    width: 100%;
+    max-width: 1040px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+
+  .page-subtitle {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .page-subtitle strong {
+    color: var(--accent-gold);
+    font-weight: 600;
+  }
+
+  /* ── Section title ── */
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+
+  /* ── Flashcard Grid ── */
+  .flashcard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .flashcard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 28px 24px 20px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    cursor: default;
+  }
+
+  .flashcard:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    border-color: rgba(110, 197, 110, 0.25);
+  }
+
+  .flashcard-word {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .flashcard-phonetic {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  .flashcard-meaning {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    line-height: 1.4;
+  }
+
+  .flashcard-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .flashcard-actions button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .flashcard-actions button:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+
+  .flashcard-actions .btn-known {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+  }
+
+  .flashcard-actions .btn-known:hover {
+    background: rgba(110, 197, 110, 0.12);
+  }
+
+  .flashcard-actions .btn-known.active {
+    background: var(--accent-green);
+    color: #0f1a12;
+    font-weight: 600;
+    border-color: var(--accent-green);
+  }
+
+  .flashcard-actions .btn-forgot {
+    border-color: rgba(196, 137, 58, 0.5);
+    color: var(--accent-amber);
+  }
+
+  .flashcard-actions .btn-forgot:hover {
+    background: rgba(196, 137, 58, 0.12);
+  }
+
+  /* ── AI Story Section ── */
+  .story-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 48px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .story-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .story-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .story-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .story-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .story-actions button {
+    padding: 7px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .story-actions button:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+
+  .story-actions .btn-regenerate {
+    background: var(--accent-green);
+    color: #0f1a12;
+    font-weight: 600;
+    border-color: var(--accent-green);
+  }
+
+  .story-actions .btn-regenerate:hover {
+    background: #5db85d;
+    border-color: #5db85d;
+  }
+
+  .story-body {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+  }
+
+  .story-body .highlight-word {
+    color: var(--accent-green);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    text-decoration-color: rgba(110, 197, 110, 0.35);
+  }
+
+  /* ── Progress Heatmap ── */
+  .heatmap-section {
+    margin-bottom: 32px;
+  }
+
+  .heatmap-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 24px 28px;
+    overflow-x: auto;
+  }
+
+  .heatmap-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .heatmap-label {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .heatmap-legend .legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+
+  .heatmap-legend .legend-swatch.l0 { background: #1a2b1d; }
+  .heatmap-legend .legend-swatch.l1 { background: #1d3a24; }
+  .heatmap-legend .legend-swatch.l2 { background: #2a5e34; }
+  .heatmap-legend .legend-swatch.l3 { background: #3d8547; }
+  .heatmap-legend .legend-swatch.l4 { background: var(--accent-green); }
+
+  .heatmap-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .heatmap-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .heatmap-cell {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 20px;
+    border-radius: 4px;
+    background: #1a2b1d;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  .heatmap-cell:hover {
+    transform: scale(1.25);
+    opacity: 0.85;
+    z-index: 2;
+  }
+
+  .heatmap-cell::after {
+    content: attr(data-count);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #1a1f1b;
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: transform 0.15s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .heatmap-cell:hover::after {
+    transform: translateX(-50%) scale(1);
+  }
+
+  .heatmap-cell.level-0 { background: #1a2b1d; }
+  .heatmap-cell.level-1 { background: #1d3a24; }
+  .heatmap-cell.level-2 { background: #2a5e34; }
+  .heatmap-cell.level-3 { background: #3d8547; }
+  .heatmap-cell.level-4 { background: var(--accent-green); }
+
+  /* ── Responsive ── */
+  @media (max-width: 860px) {
+    .flashcard-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .flashcard-grid { grid-template-columns: 1fr; }
+    .story-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .page-title { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-content">
+
+  <!-- ──── Header ──── -->
+  <header class="page-header">
+    <h1 class="page-title">&#128214; 词汇工具</h1>
+    <p class="page-subtitle">
+      FSRS 间隔重复 &middot; AI 故事 &middot; 今日 <strong>12</strong> 个待复习
+    </p>
+  </header>
+
+  <!-- ──── Flashcard Grid ──── -->
+  <section>
+    <h2 class="section-title" style="margin-bottom:16px;">&#127912; 今日卡片</h2>
+    <div class="flashcard-grid">
+
+      <!-- Card 1 -->
+      <div class="flashcard">
+        <div class="flashcard-word">Indispensable</div>
+        <div class="flashcard-phonetic">/&#712;&#618;nd&#618;&#712;sp&#603;ns&#601;b&#601;l/</div>
+        <div class="flashcard-meaning">必不可少的<br>absolutely necessary</div>
+        <div class="flashcard-actions">
+          <button class="btn-known active">&#10003; 认识</button>
+          <button>&#128266; 发音</button>
+          <button class="btn-forgot">&#10007; 遗忘</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="flashcard">
+        <div class="flashcard-word">Paradigm</div>
+        <div class="flashcard-phonetic">/&#712;p&#230;r&#601;da&#618;m/</div>
+        <div class="flashcard-meaning">范式、典范<br>a typical example or pattern</div>
+        <div class="flashcard-actions">
+          <button class="btn-known">&#10003; 认识</button>
+          <button>&#128266; 发音</button>
+          <button class="btn-forgot">&#10007; 遗忘</button>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="flashcard">
+        <div class="flashcard-word">Ubiquitous</div>
+        <div class="flashcard-phonetic">/ju&#720;&#712;b&#618;kw&#618;t&#601;s/</div>
+        <div class="flashcard-meaning">无处不在的<br>present everywhere at once</div>
+        <div class="flashcard-actions">
+          <button class="btn-known">&#10003; 认识</button>
+          <button>&#128266; 发音</button>
+          <button class="btn-forgot">&#10007; 遗忘</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ──── AI Word Story ──── -->
+  <section>
+    <div class="story-card">
+      <div class="story-header">
+        <span class="story-title">&#129302; AI 单词串故事</span>
+        <div class="story-actions">
+          <button>&#128260; 换一批</button>
+          <button class="btn-regenerate">&#8635; 重新生成</button>
+        </div>
+      </div>
+      <div class="story-body">
+        <p>
+          In today's globalised economy, English has become an 
+          <span class="highlight-word">indispensable</span> tool for 
+          professionals across every field. The traditional 
+          <span class="highlight-word">paradigm</span> of classroom-only 
+          learning has shifted; now, mobile apps make language practice 
+          so <span class="highlight-word">ubiquitous</span> that anyone 
+          can study anytime, anywhere. To truly master a language, one 
+          must be <span class="highlight-word">diligent</span> and 
+          embrace every opportunity to communicate. This 
+          <span class="highlight-word">transformative</span> approach 
+          turns passive knowledge into active fluency.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──── Progress Heatmap ──── -->
+  <section class="heatmap-section">
+    <div class="heatmap-container">
+      <div class="heatmap-header">
+        <span class="heatmap-label">&#128200; 学习热力图</span>
+        <div class="heatmap-legend">
+          <span>少</span>
+          <span class="legend-swatch l0"></span>
+          <span class="legend-swatch l1"></span>
+          <span class="legend-swatch l2"></span>
+          <span class="legend-swatch l3"></span>
+          <span class="legend-swatch l4"></span>
+          <span>多</span>
+        </div>
+      </div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+    </div>
+  </section>
+
+</div><!-- /page-content -->
+
+<script>
+(function() {
+  // Generate 2 rows x 30 columns = 60 days of study data
+  const rows = 2, cols = 30;
+  const grid = document.getElementById('heatmapGrid');
+
+  // Weighted random: more zeros and low values, some medium, few high
+  function randomLevel() {
+    const r = Math.random();
+    if (r < 0.25) return { level: 0, count: 0 };
+    if (r < 0.45) return { level: 1, count: Math.floor(Math.random() * 3) + 1 };
+    if (r < 0.65) return { level: 2, count: Math.floor(Math.random() * 5) + 4 };
+    if (r < 0.82) return { level: 3, count: Math.floor(Math.random() * 7) + 9 };
+    return { level: 4, count: Math.floor(Math.random() * 10) + 16 };
+  }
+
+  for (let r = 0; r < rows; r++) {
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    for (let c = 0; c < cols; c++) {
+      const { level, count } = randomLevel();
+      const cell = document.createElement('div');
+      cell.className = `heatmap-cell level-${level}`;
+      cell.setAttribute('data-count', count);
+      row.appendChild(cell);
+    }
+    grid.appendChild(row);
+  }
+})();
+</script>
+
+</body>
+</html>

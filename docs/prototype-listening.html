@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听力精讲 · 雅思搭子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --danger: #e85b4b;
+  --warning: #e8b84b;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 600;
+}
+.page-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* ── Header ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.page-header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-subtle);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Audio Player ── */
+.audio-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.play-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-green);
+  color: var(--bg-primary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .2s;
+}
+.play-btn:hover { opacity: 0.88; }
+.progress-wrap { flex:1; display:flex; align-items:center; gap:10px; }
+.progress-track {
+  flex:1; height:6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  position:relative;
+  overflow:hidden;
+}
+.progress-fill {
+  width: 46%;
+  height:100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-gold));
+  border-radius: 3px;
+}
+.time { font-size:13px; color:var(--text-secondary); white-space:nowrap; }
+
+/* ── Speed Tabs ── */
+.speed-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.speed-tab {
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+}
+.speed-tab:hover { border-color: var(--accent-green); color: var(--accent-green); }
+.speed-tab.active {
+  background: var(--accent-green);
+  color: var(--bg-primary);
+  border-color: var(--accent-green);
+}
+
+/* ── Transcript ── */
+.transcript-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.transcript-item:last-child { border-bottom: none; }
+.transcript-eng {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.transcript-eng .sentence {
+  flex: 1;
+}
+.pause-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+  transition: all .2s;
+}
+.pause-btn:hover { border-color: var(--accent-green); color: var(--accent-green); }
+.transcript-cn {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-left: 36px;
+}
+/* highlight keyword */
+.highlight-green {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+.highlight-amber {
+  color: var(--accent-amber);
+  font-weight: 600;
+}
+/* wrong answer badge */
+.wrong-answer-badge {
+  display: inline-block;
+  background: rgba(232,91,75,.15);
+  color: var(--danger);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-top: 6px;
+  margin-left: 36px;
+}
+
+/* ── Questions ── */
+.question-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 50px 50px;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 14px;
+  align-items: center;
+}
+.question-row:last-child { border-bottom: none; }
+.q-num { color: var(--text-secondary); font-weight: 500; }
+.q-user { color: var(--accent-gold); }
+.q-correct { color: var(--accent-green); }
+.q-mark {
+  text-align: center;
+  font-size: 16px;
+}
+.q-mark.correct { color: var(--accent-green); }
+.q-mark.wrong { color: var(--danger); }
+.q-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 50px 50px;
+  gap: 8px;
+  padding: 0 0 8px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── AI Analysis ── */
+.ai-box {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 14px;
+  border-left: 3px solid var(--accent-gold);
+}
+.ai-box .ai-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-box .ai-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.analysis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--accent-amber);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.analysis-btn:hover { opacity: 0.85; }
+
+/* ── Section Label ── */
+.section-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <!-- ── Header ── -->
+  <div class="page-header">
+    <h1>&#127926; 听力精讲</h1>
+    <div class="subtitle">歌词式逐句精听 · 同义替换高亮 · 变速播放</div>
+  </div>
+
+  <!-- ── Card: Audio Player ── -->
+  <div class="card">
+    <div class="card-title">&#127908; 考场模拟 · Cambridge 17 Test 3 Section 3</div>
+    <div class="audio-bar">
+      <button class="play-btn">&#9654;</button>
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="time">02:30 / 05:45</span>
+      </div>
+    </div>
+    <div class="speed-tabs">
+      <button class="speed-tab">0.75x</button>
+      <button class="speed-tab active">1x</button>
+      <button class="speed-tab">1.25x</button>
+    </div>
+  </div>
+
+  <!-- ── Transcript ── -->
+  <div class="card">
+    <div class="card-title">&#128172; 逐句精听</div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence">So, we need to <span class="highlight-green">decide on</span> the <span class="highlight-green">primary focus</span> of our presentation first.</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn">所以，我们需要先<span class="highlight-green">决定</span>我们演示的<span class="highlight-green">主要重点</span>。</div>
+      <div class="wrong-answer-badge">&#9888;&#65039; 第 22 题答案在此句 — 同义替换：decide on = determine</div>
+    </div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence">I think we should <span class="highlight-green">concentrate on</span> the <span class="highlight-green">environmental impact</span> rather than the economic aspect.</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn">我认为我们应该<span class="highlight-green">集中关注</span><span class="highlight-green">环境影响</span>而非经济方面。</div>
+    </div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence">That&#8217;s a good point. <span class="highlight-amber">But</span> we also need to <span class="highlight-amber">consider</span> the timeline &#8212; it&#8217;s quite tight.</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn">说得对。<span class="highlight-amber">但</span>我们也需要<span class="highlight-amber">考虑</span>时间线——相当紧张。</div>
+    </div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence">Well, <span class="highlight-green">if we split</span> the research tasks, we can <span class="highlight-green">manage</span> it within two weeks.</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn">嗯，<span class="highlight-green">如果我们分工</span>研究任务，可以两周内<span class="highlight-green">完成</span>。</div>
+    </div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence">Alright. So Maria, could you <span class="highlight-green">look into</span> the <span class="highlight-green">case studies</span> from last year?</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn">好的。Maria，你能<span class="highlight-green">研究一下</span>去年的<span class="highlight-green">案例研究</span>吗？</div>
+    </div>
+
+    <div class="transcript-item">
+      <div class="transcript-eng">
+        <span class="sentence"><span class="highlight-green">Sure,</span> and I&#8217;ll also <span class="highlight-green">gather</span> some <span class="highlight-green">data</span> on public transport usage.</span>
+        <button class="pause-btn">&#9641;</button>
+      </div>
+      <div class="transcript-cn"><span class="highlight-green">好的</span>，我还会<span class="highlight-green">收集</span>一些公共交通使用的<span class="highlight-green">数据</span>。</div>
+    </div>
+
+  </div>
+
+  <!-- ── Questions ── -->
+  <div class="card">
+    <div class="card-title">&#128221; Section 3 Questions 21&#8211;25</div>
+    <div class="section-label">Choose the correct letter, A, B or C.</div>
+    <div style="margin-top:12px;">
+      <div class="q-header">
+        <span>题号</span>
+        <span>你的答案</span>
+        <span>正确答案</span>
+        <span>对错</span>
+        <span>标记</span>
+      </div>
+      <div class="question-row">
+        <span class="q-num">21</span>
+        <span class="q-user">A</span>
+        <span class="q-correct">A</span>
+        <span class="q-mark correct">&#10004;</span>
+        <span></span>
+      </div>
+      <div class="question-row">
+        <span class="q-num">22</span>
+        <span class="q-user" style="color:var(--danger);">B</span>
+        <span class="q-correct">C</span>
+        <span class="q-mark wrong">&#10008;</span>
+        <span class="q-mark correct" style="font-size:13px;">&#10004;</span>
+      </div>
+      <div class="question-row">
+        <span class="q-num">23</span>
+        <span class="q-user">C</span>
+        <span class="q-correct">C</span>
+        <span class="q-mark correct">&#10004;</span>
+        <span></span>
+      </div>
+      <div class="question-row">
+        <span class="q-num">24</span>
+        <span class="q-user">A</span>
+        <span class="q-correct">A</span>
+        <span class="q-mark correct">&#10004;</span>
+        <span></span>
+      </div>
+      <div class="question-row">
+        <span class="q-num">25</span>
+        <span class="q-user" style="color:var(--danger);">B</span>
+        <span class="q-correct">A</span>
+        <span class="q-mark wrong">&#10008;</span>
+        <span class="q-mark correct" style="font-size:13px;">&#10004;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI Analysis ── -->
+  <div class="card">
+    <div class="card-title">&#129513; AI 错题分析</div>
+    <button class="analysis-btn">&#128269; 错题溯源</button>
+
+    <div class="ai-box" style="margin-top:16px;">
+      <div class="ai-label">&#9878;&#65039; 错题溯源 · 第 22 题</div>
+      <div class="ai-text">
+        <p><strong>题目：</strong>What is the main topic of the presentation?</p>
+        <p style="margin-top:6px;"><strong>你的答案：</strong>B (Economic impact) &#8212; <span style="color:var(--danger);">&#10008; 错误</span></p>
+        <p><strong>正确答案：</strong>C (Environmental impact)</p>
+        <p style="margin-top:10px;"><strong>&#128161; 解析：</strong>原文中说话者明确提到 "I think we should <em>concentrate on</em> the <em>environmental impact</em> rather than the economic aspect"。这是典型的同义替换考点：<span class="highlight-green">concentrate on ≈ focus on / primary focus</span>。选项 B 是干扰项 &#8212; 说话者确实提到了 economic aspect，但用了 "rather than" 表示否定。</p>
+        <p style="margin-top:8px;"><strong>&#128218; 相关考点：</strong>否定信号词 (rather than, instead of) + 观点转折 (but, however) 后的内容往往是正确答案。</p>
+        <p style="margin-top:8px;"><strong>&#128221; 同类词汇：</strong>concentrate on, focus on, center on, revolve around, be concerned with</p>
+      </div>
+    </div>
+
+    <div class="ai-box" style="margin-top:12px;border-left-color:var(--info);">
+      <div class="ai-label">&#128200; 错题溯源 · 第 25 题</div>
+      <div class="ai-text">
+        <p><strong>你的答案：</strong>B (Public transport statistics) &#8212; <span style="color:var(--danger);">&#10008; 错误</span></p>
+        <p><strong>正确答案：</strong>A (Case studies from last year)</p>
+        <p style="margin-top:10px;"><strong>&#128161; 解析：</strong>说话者分配任务时明确说 "could you <em>look into</em> the <em>case studies</em> from last year"，Maria 回答 "Sure"。同义替换：<span class="highlight-green">look into = research / investigate</span>。选项 B 是 Maria 自己要做的额外任务，并非分配给她。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

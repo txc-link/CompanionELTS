@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语聊天对战</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-primary:#0f1a12;--bg-card:#1e3022;--bg-elevated:#243828;--accent-green:#6ec56e;--accent-gold:#e8b84b;--text-primary:#f4f0e6;--text-secondary:#b8c4a8;--text-muted:#7a9170;--border-subtle:#2a3d2c;--info:#5b9bd5;--danger:#e85b4b;--warning:#e8b84b;--radius-md:16px;--radius-sm:8px}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px}
+.page-content{max-width:1100px;width:100%;padding:32px 0 80px;display:flex;flex-direction:column;height:100vh;max-height:900px;gap:0}
+
+/* header */
+.header{margin-bottom:24px;flex-shrink:0}
+.header h1{font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--text-primary);letter-spacing:-0.3px;display:flex;align-items:center;gap:10px}
+.header .subtitle{font-size:14px;color:var(--text-secondary);margin-top:6px;letter-spacing:0.2px}
+
+/* two-column layout */
+.battle-layout{display:flex;gap:20px;flex:1;min-height:0}
+
+/* LEFT (30%) */
+.panel-left{width:30%;flex-shrink:0;display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-right:4px}
+.panel-left::-webkit-scrollbar{width:4px}
+.panel-left::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:99px}
+
+.section-label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px}
+
+.topic-list{display:flex;flex-direction:column;gap:8px}
+.topic-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px 16px;cursor:pointer;transition:all .2s}
+.topic-card:hover{background:var(--bg-elevated)}
+.topic-card.active{border-color:var(--accent-green);background:var(--bg-elevated)}
+.topic-card .topic-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.topic-card .diff{font-size:13px;font-weight:600}
+.topic-card .multiplier{font-size:11px;color:var(--accent-gold);font-weight:600;background:rgba(232,184,75,0.15);padding:2px 8px;border-radius:99px}
+.topic-card .topic-title{font-size:14px;font-weight:500;color:var(--text-primary)}
+.topic-card .topic-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.ai-recommend{background:linear-gradient(135deg,rgba(110,197,110,0.12),rgba(232,184,75,0.08));border:1px solid var(--accent-green);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-top:4px}
+.ai-recommend .rec-icon{font-size:16px}
+.ai-recommend .rec-text{font-size:13px;color:var(--text-secondary);font-weight:500}
+.ai-recommend .rec-text strong{color:var(--accent-green)}
+
+/* RIGHT (70%) */
+.panel-right{width:70%;flex-shrink:0;display:flex;flex-direction:column;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-subtle);overflow:hidden}
+
+/* chat header */
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.chat-header .left{display:flex;align-items:center;gap:10px}
+.chat-header .mode-badge{font-size:12px;font-weight:600;background:var(--bg-elevated);padding:4px 10px;border-radius:99px;color:var(--accent-green)}
+.chat-header .opponent{font-size:15px;font-weight:600;color:var(--text-primary)}
+.chat-header .timer{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+
+/* chat messages */
+.chat-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.chat-body::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:99px}
+
+.msg{max-width:85%;display:flex;flex-direction:column;gap:4px}
+.msg.ai{align-self:flex-start}
+.msg.user{align-self:flex-end;align-items:flex-end}
+
+.msg .bubble{padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.55;position:relative}
+.msg.ai .bubble{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-bottom-left-radius:4px;color:var(--text-primary)}
+.msg.user .bubble{background:rgba(110,197,110,0.18);border:1px solid rgba(110,197,110,0.3);border-bottom-right-radius:4px;color:var(--text-primary)}
+
+.msg .sender{font-size:11px;color:var(--text-muted);padding:0 4px}
+
+.msg .extra-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:99px;margin-top:4px;width:fit-content}
+.msg.user .extra-badge{background:rgba(232,184,75,0.15);color:var(--accent-gold)}
+.msg.ai .extra-badge{background:rgba(91,155,213,0.15);color:var(--info)}
+
+.msg .meme-tip{font-size:12px;color:var(--text-muted);margin-top:2px;font-style:italic}
+
+/* grammar hint inline */
+.grammar-hint{font-size:12px;color:var(--info);background:rgba(91,155,213,0.1);padding:6px 10px;border-radius:8px;margin-top:4px;border-left:3px solid var(--info)}
+.grammar-hint strong{color:var(--info)}
+
+/* input area */
+.chat-input-area{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--border-subtle);flex-shrink:0;align-items:flex-end}
+.chat-input-area textarea{flex:1;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;color:var(--text-primary);resize:none;font-family:'DM Sans',sans-serif;min-height:44px;line-height:1.4}
+.chat-input-area textarea::placeholder{color:var(--text-muted)}
+.chat-input-area textarea:focus{outline:none;border-color:var(--accent-green)}
+.btn-send{background:var(--accent-green);border:none;border-radius:var(--radius-sm);width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.btn-send:hover{background:#7dd67d;transform:scale(1.04)}
+
+/* bottom hints */
+.bottom-hints{display:flex;gap:14px;padding:10px 20px;border-top:1px solid var(--border-subtle);flex-shrink:0;justify-content:space-between;align-items:center}
+.hint-group{display:flex;gap:14px}
+.hint-item{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px}
+.hint-item .indicator{width:8px;height:8px;border-radius:50%;display:inline-block}
+.indicator.red{background:var(--danger)}
+.indicator.yellow{background:var(--warning)}
+.points-display{font-size:12px;font-weight:600;color:var(--accent-gold)}
+</style>
+</head>
+<body>
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>💬 英语聊天对战</h1>
+    <div class="subtitle">积分加倍 · 分级联赛 · 实时辅助</div>
+  </div>
+
+  <!-- Battle Layout -->
+  <div class="battle-layout">
+
+    <!-- LEFT PANEL -->
+    <div class="panel-left">
+      <div class="section-label">🏷️ Topics</div>
+      <div class="topic-list">
+
+        <div class="topic-card active">
+          <div class="topic-header">
+            <span class="diff">🟢 日常</span>
+            <span class="multiplier">×1.0</span>
+          </div>
+          <div class="topic-title">Weekend Plans</div>
+          <div class="topic-sub">基础 · 5 轮对话</div>
+        </div>
+
+        <div class="topic-card">
+          <div class="topic-header">
+            <span class="diff">🟡 生活</span>
+            <span class="multiplier">×1.5</span>
+          </div>
+          <div class="topic-title">Travel</div>
+          <div class="topic-sub">中级 · 8 轮对话</div>
+        </div>
+
+        <div class="topic-card">
+          <div class="topic-header">
+            <span class="diff">🔴 学术</span>
+            <span class="multiplier">×2.0</span>
+          </div>
+          <div class="topic-title">Climate Change</div>
+          <div class="topic-sub">高级 · 10 轮对话</div>
+        </div>
+
+        <div class="topic-card">
+          <div class="topic-header">
+            <span class="diff">🏆 雅思</span>
+            <span class="multiplier">×2.5</span>
+          </div>
+          <div class="topic-title">Advantages &amp; Disadvantages</div>
+          <div class="topic-sub">冲刺 · 12 轮对话</div>
+        </div>
+
+      </div>
+
+      <div class="ai-recommend">
+        <span class="rec-icon">🔥</span>
+        <span class="rec-text">AI 推荐 · <strong>Weekend Plans</strong>（新手友好，适合热身）</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel-right">
+
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="left">
+          <span class="mode-badge">🤖 AI对战</span>
+          <span class="opponent">考官小雅</span>
+        </div>
+        <span class="timer">⏱️ 08:42</span>
+      </div>
+
+      <!-- Chat Body -->
+      <div class="chat-body">
+
+        <!-- AI Message 1 -->
+        <div class="msg ai">
+          <span class="sender">考官小雅</span>
+          <div class="bubble">
+            Hey there! Ready for a chat? 🐣<br>
+            So, what did you get up to last weekend?<br>
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">(用了本周热门 meme "Nobody: ... Me on Monday morning" 暖场)</span>
+          </div>
+        </div>
+
+        <!-- User Message -->
+        <div class="msg user">
+          <span class="sender">你</span>
+          <div class="bubble">
+            Last weekend I went to a café with my friend. We drank coffee and talked about our jobs. It was relaxing.
+          </div>
+          <span class="extra-badge">🎯 +5 积分</span>
+        </div>
+
+        <!-- AI Message 2 -->
+        <div class="msg ai">
+          <span class="sender">考官小雅</span>
+          <div class="bubble">
+            Sounds lovely! ☕ I bet it was nice to catch up. What kind of coffee do you usually order?<br>
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:2px">*小提示：试试用 more specific vocabulary 替代 "nice"~</span>
+          </div>
+          <div class="grammar-hint">
+            💡 <strong>Grammar Hint:</strong> "I <u>went</u>" is past tense — good job! Try adding "had been" for earlier actions: "I <u>had been</u> meaning to try their latte."
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <textarea placeholder="输入你的英文回复…" rows="1"></textarea>
+        <button class="btn-send">➤</button>
+      </div>
+
+      <!-- Bottom Hints -->
+      <div class="bottom-hints">
+        <div class="hint-group">
+          <span class="hint-item"><span class="indicator red"></span> 拼写检测</span>
+          <span class="hint-item"><span class="indicator yellow"></span> 语法提示</span>
+        </div>
+        <span class="points-display">积分: +5</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

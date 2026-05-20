@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 错题本 · 雅思搭子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1a12;
+  --bg-card: #1e3022;
+  --bg-elevated: #243828;
+  --accent-green: #6ec56e;
+  --accent-gold: #e8b84b;
+  --accent-amber: #c4893a;
+  --text-primary: #f4f0e6;
+  --text-secondary: #b8c4a8;
+  --text-muted: #7a9170;
+  --border-subtle: #2a3d2c;
+  --info: #5b9bd5;
+  --danger: #e85b4b;
+  --warning: #e8b84b;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', 'Noto Serif SC', serif;
+  font-weight: 600;
+}
+.page-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* ── Header ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.page-header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-subtle);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Filter Bar ── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.subject-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.subject-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+}
+.subject-tab:hover { border-color: var(--accent-green); color: var(--accent-green); }
+.subject-tab.active {
+  background: var(--accent-green);
+  color: var(--bg-primary);
+  border-color: var(--accent-green);
+}
+.date-badge {
+  margin-left: auto;
+  padding: 6px 14px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Mistake Item ── */
+.mistake-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background .15s;
+}
+.mistake-item:last-of-type { border-bottom: none; }
+.mistake-item:hover { background: rgba(255,255,255,0.02); }
+.mistake-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.subject-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.subject-icon.listening { background: rgba(108,197,108,0.15); color: var(--accent-green); }
+.subject-icon.reading { background: rgba(91,155,213,0.15); color: var(--info); }
+.subject-icon.writing { background: rgba(232,184,75,0.15); color: var(--accent-gold); }
+.subject-icon.speaking { background: rgba(196,137,58,0.15); color: var(--accent-amber); }
+
+.mistake-body { flex:1; min-width:0; }
+.mistake-q {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.mistake-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.mistake-meta .wrong-ans { color: var(--danger); }
+.mistake-meta .right-ans { color: var(--accent-green); }
+.expand-icon { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(232,184,75,0.12);
+  color: var(--accent-gold);
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+/* ── AI Explanation (expand) ── */
+.ai-explanation {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-gold);
+  display: none;
+}
+.mistake-item.expanded .ai-explanation { display: block; }
+.ai-explain-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-explain-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.ai-explain-text p { margin-bottom: 6px; }
+.ai-explain-text .vocab-item {
+  display: inline-block;
+  background: rgba(108,197,108,0.1);
+  color: var(--accent-green);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+}
+
+/* ── Crush Button ── */
+.crush-section { text-align: center; padding: 8px 0; }
+.crush-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-amber));
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 4px 20px rgba(232,184,75,0.2);
+}
+.crush-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(232,184,75,0.35);
+}
+
+/* ── Exam Recall ── */
+.recall-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.recall-item:last-child { border-bottom: none; }
+.recall-date {
+  min-width: 60px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-amber);
+}
+.recall-body { flex:1; }
+.recall-city {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.recall-summary {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+.recall-freq {
+  font-size: 12px;
+  display: inline-block;
+  background: rgba(232,184,75,0.1);
+  color: var(--accent-gold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <!-- ── Header ── -->
+  <div class="page-header">
+    <h1>&#128221; AI 错题本</h1>
+    <div class="subtitle">AI 溯源讲解 · 错题重做 · 考场回忆</div>
+  </div>
+
+  <!-- ── Filter Bar ── -->
+  <div class="card" style="padding:14px 20px;">
+    <div class="filter-bar">
+      <div class="subject-tabs">
+        <button class="subject-tab active">全部</button>
+        <button class="subject-tab">听力</button>
+        <button class="subject-tab">阅读</button>
+        <button class="subject-tab">写作</button>
+        <button class="subject-tab">口语</button>
+      </div>
+      <span class="date-badge">近 7 天 &#9660;</span>
+    </div>
+  </div>
+
+  <!-- ── Mistake List ── -->
+  <div class="card" style="padding:8px 20px;">
+
+    <!-- Item 1: Listening (expanded) -->
+    <div class="mistake-item expanded">
+      <div class="mistake-top">
+        <div class="subject-icon listening">&#127926;</div>
+        <div class="mistake-body">
+          <div class="mistake-q">C17T3S3 - Presentation main topic</div>
+          <div class="mistake-meta">
+            你的答案: <span class="wrong-ans">B (Economic impact)</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            正确答案: <span class="right-ans">C (Environmental impact)</span>
+            <span class="tag">&#128197; 近期考过</span>
+          </div>
+        </div>
+        <div class="expand-icon">&#9660;</div>
+      </div>
+      <div class="ai-explanation">
+        <div class="ai-explain-label">&#128161; AI 解析</div>
+        <div class="ai-explain-text">
+          <p><strong>错误原因分析：</strong>被选项 B "economic aspect" 干扰。原文中虽然出现了 "economic"，但前面有明确否定信号词 <strong>"rather than"</strong>。听力中带否定/转折词的句子是高频考点。</p>
+          <p><strong>同类题型提示：</strong>当选项关键词在原文中出现但被否定时，该选项几乎一定是干扰项。注意信号词：rather than, instead of, not...but, although, while。</p>
+          <p><strong>相关词汇积累：</strong>
+            <span class="vocab-item">concentrate on</span>
+            <span class="vocab-item">primary focus</span>
+            <span class="vocab-item">environmental impact</span>
+            <span class="vocab-item">rather than</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item 2: Reading -->
+    <div class="mistake-item">
+      <div class="mistake-top">
+        <div class="subject-icon reading">&#128218;</div>
+        <div class="mistake-body">
+          <div class="mistake-q">C17T1P2 - Matching headings</div>
+          <div class="mistake-meta">
+            你的答案: <span class="wrong-ans">iv (Economic effects)</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            正确答案: <span class="right-ans">vi (Environmental consequences)</span>
+            <span class="tag">&#128197; 近期考过</span>
+          </div>
+        </div>
+        <div class="expand-icon">&#9660;</div>
+      </div>
+      <div class="ai-explanation">
+        <div class="ai-explain-label">&#128161; AI 解析</div>
+        <div class="ai-explain-text">
+          <p><strong>错误原因分析：</strong>段落首句提到了 "economic growth"，但整段实际讨论的是 urban development 对环境的影响。heading 题不能只看首句，要通读全段找主旨。</p>
+          <p><strong>同类题型提示：</strong>Heading 题注意区分 topic sentence 和 supporting details。段首出现的高频词不一定是主旨。</p>
+          <p><strong>相关词汇积累：</strong>
+            <span class="vocab-item">urban development</span>
+            <span class="vocab-item">carbon emission</span>
+            <span class="vocab-item">ecological footprint</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item 3: Writing -->
+    <div class="mistake-item">
+      <div class="mistake-top">
+        <div class="subject-icon writing">&#9997;&#65039;</div>
+        <div class="mistake-body">
+          <div class="mistake-q">Task 2 - 同意与否 (Technology)</div>
+          <div class="mistake-meta">
+            你的答案: <span class="wrong-ans">6.0 (结构偏题)</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            正确答案: <span class="right-ans">7.0+ 范文结构</span>
+          </div>
+        </div>
+        <div class="expand-icon">&#9660;</div>
+      </div>
+      <div class="ai-explanation">
+        <div class="ai-explain-label">&#128161; AI 解析</div>
+        <div class="ai-explain-text">
+          <p><strong>错误原因分析：</strong>主体段论述偏离了题目中的 "agree or disagree" 要求，写成了利弊分析。同意与否题型必须明确立场，每个主体段都要围绕立场展开论证。</p>
+          <p><strong>同类题型提示：</strong>同意与否题型四段法：Intro(立场) + 段1(支持理由+例证) + 段2(让步+反驳) + Conclusion。</p>
+          <p><strong>相关词汇积累：</strong>
+            <span class="vocab-item">it is undeniable that</span>
+            <span class="vocab-item">this is not to say that</span>
+            <span class="vocab-item">on balance</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item 4: Speaking -->
+    <div class="mistake-item">
+      <div class="mistake-top">
+        <div class="subject-icon speaking">&#128172;</div>
+        <div class="mistake-body">
+          <div class="mistake-q">Part 2 - Describe a place you visited</div>
+          <div class="mistake-meta">
+            你的答案: <span class="wrong-ans">5.5 (流利度不足)</span>
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            目标分: <span class="right-ans">6.5+</span>
+          </div>
+        </div>
+        <div class="expand-icon">&#9660;</div>
+      </div>
+      <div class="ai-explanation">
+        <div class="ai-explain-label">&#128161; AI 解析</div>
+        <div class="ai-explain-text">
+          <p><strong>错误原因分析：</strong>回答过于简短，每个要点只说 1-2 句就结束了。Part 2 需要针对每个 bullet point 展开 3-4 句话（描述+感受+细节）。</p>
+          <p><strong>同类题型提示：</strong>Part 2 时间分配：Introduction(15s) + 每个要点(25-30s x4) + 结尾(10s)。用 5W1H 扩展每个点。</p>
+          <p><strong>相关词汇积累：</strong>
+            <span class="vocab-item">breathtaking scenery</span>
+            <span class="vocab-item">crystal-clear water</span>
+            <span class="vocab-item">an unforgettable experience</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Crush Mode ── -->
+  <div class="card crush-section">
+    <button class="crush-btn">&#128165; 进入错题粉碎机</button>
+    <p style="margin-top:10px; font-size:13px; color:var(--text-muted);">一键重温错题，AI 生成同类题强化训练</p>
+  </div>
+
+  <!-- ── Exam Recall ── -->
+  <div class="card">
+    <div class="card-title">&#128203; 近期考场回忆</div>
+
+    <div class="recall-item">
+      <div class="recall-date">05/18</div>
+      <div class="recall-body">
+        <div class="recall-city">&#127758; 北京 · 国试考试中心</div>
+        <div class="recall-summary">听力地图题出现 2 次，阅读 Heading 题占比高，写作 Task 2 考了"城市化对环境影响"</div>
+        <span class="recall-freq">高频 &#9733;&#9733;&#9733;</span>
+      </div>
+    </div>
+
+    <div class="recall-item">
+      <div class="recall-date">05/11</div>
+      <div class="recall-body">
+        <div class="recall-city">&#127758; 上海 · 华东师范大学</div>
+        <div class="recall-summary">口语 Part 2 考"描述一个重要的 conversation"，写作 Task 1 为地图题，听力 Section 3 为学术讨论</div>
+        <span class="recall-freq">高频 &#9733;&#9733;&#9733;</span>
+      </div>
+    </div>
+
+    <div class="recall-item">
+      <div class="recall-date">05/04</div>
+      <div class="recall-body">
+        <div class="recall-city">&#127758; 广州 · 广东外语外贸大学</div>
+        <div class="recall-summary">阅读出现段落信息匹配题，听力 Section 2 为地图配对，写作 Task 2 科技类话题</div>
+        <span class="recall-freq">中频 &#9733;&#9733;</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// Toggle AI explanation on click
+document.querySelectorAll('.mistake-item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    // Don't toggle if clicking inside ai-explanation (to allow text selection)
+    if (e.target.closest('.ai-explanation')) return;
+    this.classList.toggle('expanded');
+  });
+});
+</script>
+
+</body>
+</html>
