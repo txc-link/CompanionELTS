@@ -1,0 +1,2 @@
+// Skills page placeholder
+export {}

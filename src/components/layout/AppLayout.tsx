@@ -1,0 +1,2 @@
+// AppLayout component placeholder
+export {}

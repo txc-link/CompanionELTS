@@ -1,0 +1,2 @@
+// StudyCalendar component placeholder
+export {}

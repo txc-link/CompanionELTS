@@ -1,0 +1,2 @@
+// useStudySync hook placeholder
+export {}

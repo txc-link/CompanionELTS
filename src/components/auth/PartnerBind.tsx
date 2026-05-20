@@ -1,0 +1,2 @@
+// PartnerBind component placeholder
+export {}

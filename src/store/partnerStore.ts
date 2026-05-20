@@ -1,0 +1,2 @@
+// Partner store placeholder
+export {}

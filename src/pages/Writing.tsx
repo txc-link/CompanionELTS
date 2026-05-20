@@ -1,0 +1,2 @@
+// Writing page placeholder
+export {}

@@ -1,0 +1,2 @@
+// MobileNav component placeholder
+export {}

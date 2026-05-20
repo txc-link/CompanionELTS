@@ -1,0 +1,2 @@
+// Study store placeholder
+export {}

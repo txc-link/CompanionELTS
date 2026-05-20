@@ -1,0 +1,2 @@
+// Badge component placeholder
+export {}

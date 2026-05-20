@@ -1,0 +1,2 @@
+// DualProgress component placeholder
+export {}

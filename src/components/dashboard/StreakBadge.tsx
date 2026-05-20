@@ -1,0 +1,2 @@
+// StreakBadge component placeholder
+export {}

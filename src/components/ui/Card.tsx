@@ -1,0 +1,2 @@
+// Card component placeholder
+export {}

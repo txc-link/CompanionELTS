@@ -1,0 +1,2 @@
+// Upload page placeholder
+export {}

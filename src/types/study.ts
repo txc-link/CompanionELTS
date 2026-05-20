@@ -1,0 +1,2 @@
+// Study types placeholder
+export {}

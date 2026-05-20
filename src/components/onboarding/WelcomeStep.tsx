@@ -1,0 +1,2 @@
+// WelcomeStep component placeholder
+export {}

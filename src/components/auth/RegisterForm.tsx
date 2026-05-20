@@ -1,0 +1,2 @@
+// RegisterForm component placeholder
+export {}

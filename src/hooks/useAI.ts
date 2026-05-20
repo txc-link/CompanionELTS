@@ -1,0 +1,2 @@
+// useAI hook placeholder
+export {}

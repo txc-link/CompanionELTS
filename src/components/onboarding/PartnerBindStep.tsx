@@ -1,0 +1,2 @@
+// PartnerBindStep component placeholder
+export {}
