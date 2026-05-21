@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -7,6 +7,10 @@ import { useStudyStore } from '@/store/studyStore'
 import { cn } from '@/utils/cn'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 function getWeekDays() {
   const days = []
   const today = new Date()
@@ -51,7 +55,7 @@ function ProgressRing({
   const offset = circumference - (percent / 100) * circumference
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="relative flex flex-col items-center gap-1.5">
       <svg width={size} height={size} className="transform -rotate-90">
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#2a3d2c" strokeWidth={strokeWidth} />
         <circle
@@ -60,7 +64,7 @@ function ProgressRing({
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <div className="absolute flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-sm font-bold text-text-primary">{value}</span>
       </div>
       <span className="text-[10px] font-medium text-text-muted uppercase tracking-[0.5px]">{label}</span>
@@ -115,15 +119,10 @@ export default function Dashboard() {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(
     new Set(mockTasks.filter((t) => t.status === 'completed').map((t) => t.id))
   )
-  const weekDays = getWeekDays()
-  const todayRef = useRef<HTMLButtonElement>(null)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const calendarRef = useRef<HTMLDivElement>(null)
 
-  // Scroll to today on mount
-  useEffect(() => {
-    todayRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [])
+  const weekDays = getWeekDays()
+  // Default selected date to today
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayStr)
 
   const toggleTask = (id: string) => {
     setCompletedTasks((prev) => {
@@ -153,46 +152,41 @@ export default function Dashboard() {
       </div>
 
       {/* Calendar Strip */}
-      <div ref={calendarRef} className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-        {weekDays.map((day) => (
-          <button
-            key={day.date}
-            ref={day.isToday ? todayRef : undefined}
-            onClick={() => {
-              setSelectedDate(day.date)
-              calendarRef.current?.scrollTo({
-                left: weekDays.indexOf(day) * 68,
-                behavior: 'smooth',
-              })
-            }}
-            className={cn(
-              'flex flex-col items-center gap-1.5 py-2.5 px-3.5 rounded-[12px] min-w-[52px] transition-all duration-200 flex-shrink-0 cursor-pointer',
-              selectedDate === day.date
-                ? 'ring-2 ring-accent-green ring-offset-1 ring-offset-bg-primary'
-                : '',
-              day.isToday
-                ? 'bg-accent-green text-bg-primary'
-                : 'bg-bg-card border border-border-subtle text-text-secondary hover:bg-bg-elevated'
-            )}
-          >
-            <span className={cn(
-              'text-[10px] font-medium tracking-[0.5px]',
-              day.isToday && 'text-bg-primary/70'
-            )}>
-              {day.dayOfWeek}
-            </span>
-            <span className={cn('text-sm font-bold', day.isToday && 'text-bg-primary')}>
-              {day.dayNumber}
-            </span>
-            {day.hasSession && !day.isToday && (
-              <span className={cn(
-                'h-1 w-1 rounded-full',
-                day.isCompleted ? 'bg-accent-green' : 'bg-text-muted/40'
-              )} />
-            )}
-          </button>
-        ))}
-      </div>
+      <Card>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {weekDays.map((day) => {
+            const isSelected = selectedDate === day.date
+            return (
+              <button
+                key={day.date}
+                onClick={() => setSelectedDate(day.date)}
+                className={cn(
+                  'flex flex-col items-center gap-1 py-2.5 px-3 rounded-[12px] min-w-[56px] transition-all duration-200 cursor-pointer flex-shrink-0',
+                  isSelected
+                    ? 'bg-accent-green text-bg-primary shadow-[0_2px_8px_rgba(110,197,110,0.3)]'
+                    : day.isToday
+                    ? 'bg-accent-green/15 text-accent-green border border-accent-green/30 hover:bg-accent-green/25'
+                    : 'bg-bg-elevated text-text-secondary hover:bg-border-subtle border border-transparent'
+                )}
+              >
+                <span className="text-[10px] font-medium tracking-wide">
+                  {day.dayOfWeek}
+                </span>
+                <span className="text-sm font-bold">{day.dayNumber}</span>
+                {day.hasSession && !isSelected && (
+                  <span className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    day.isCompleted ? 'bg-accent-green' : 'bg-text-muted/50'
+                  )} />
+                )}
+                {isSelected && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-bg-primary/60" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
 
       {/* Dual Progress Rings */}
       <Card>
@@ -204,27 +198,23 @@ export default function Dashboard() {
           本周进度
         </CardTitle>
         <div className="flex items-center justify-center gap-10 sm:gap-16 py-2">
-          <div className="relative flex flex-col items-center">
-            <ProgressRing
-              percent={mePercent} color="#6ec56e"
-              label="我"
-              value={`${stats.weekScore || 0}/9`}
-              sublabel={user?.nickname || '我'}
-            />
-          </div>
+          <ProgressRing
+            percent={mePercent} color="#6ec56e"
+            label="我"
+            value={`${stats.weekScore || 0}/9`}
+            sublabel={user?.nickname || '我'}
+          />
           <div className="flex flex-col items-center gap-1">
             <div className="w-10 h-10 rounded-full bg-bg-elevated border border-border-subtle flex items-center justify-center">
               <span className="text-xs font-bold text-text-muted">VS</span>
             </div>
           </div>
-          <div className="relative flex flex-col items-center">
-            <ProgressRing
-              percent={partnerPercent} color="#e8b84b"
-              label="搭子"
-              value={partner?.isBound ? `${partner.partnerScore || 0}/9` : '--'}
-              sublabel={partner?.isBound ? partner.partnerNickname : '未绑定'}
-            />
-          </div>
+          <ProgressRing
+            percent={partnerPercent} color="#e8b84b"
+            label="搭子"
+            value={partner?.isBound ? `${partner.partnerScore || 0}/9` : '--'}
+            sublabel={partner?.isBound ? partner.partnerNickname : '未绑定'}
+          />
         </div>
       </Card>
 
@@ -279,7 +269,7 @@ export default function Dashboard() {
                   key={task.id}
                   onClick={() => toggleTask(task.id)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all duration-200 text-left cursor-pointer group',
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all duration-200 text-left cursor-pointer',
                     done ? 'bg-accent-green/5' : 'hover:bg-bg-elevated'
                   )}
                 >

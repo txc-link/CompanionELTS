@@ -114,6 +114,7 @@ export default function Study() {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskCategory, setNewTaskCategory] = useState<StudyTask['category']>('reading')
   const [newTaskPriority, setNewTaskPriority] = useState<StudyTask['priority']>('medium')
+  const [selectedDate, setSelectedDate] = useState<string>(today.toISOString().slice(0, 10))
 
   const { tasks, toggleTaskStatus } = useStudyStore()
 
@@ -202,18 +203,22 @@ export default function Study() {
 
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, idx) => (
+              {calendarDays.map((day, idx) => {
+                const isSelected = selectedDate === day.date.toISOString().slice(0, 10)
+                return (
                 <div
                   key={idx}
+                  onClick={() => day.isCurrentMonth && setSelectedDate(day.date.toISOString().slice(0, 10))}
                   className={cn(
                     'relative flex flex-col items-center justify-start pt-1.5 pb-1 rounded-[8px] text-xs',
                     'min-h-[52px] transition-all duration-200',
                     day.isCurrentMonth
-                      ? day.isToday
-                        ? 'bg-accent-green/10 border border-accent-green/40'
+                      ? isSelected
+                        ? 'bg-accent-green text-bg-primary cursor-pointer shadow-[0_2px_8px_rgba(110,197,110,0.2)]'
+                        : day.isToday
+                        ? 'bg-accent-green/10 border border-accent-green/40 cursor-pointer hover:bg-accent-green/15'
                         : 'hover:bg-bg-elevated cursor-pointer'
-                      : 'opacity-30',
-                    !day.isCurrentMonth && 'pointer-events-none'
+                      : 'opacity-30 pointer-events-none',
                   )}
                 >
                   <span
@@ -247,7 +252,7 @@ export default function Study() {
                     <span className="text-[9px] text-accent-green font-medium mt-0.5">TODAY</span>
                   )}
                 </div>
-              ))}
+              )})}
             </div>
 
             {/* Legend */}
@@ -259,6 +264,10 @@ export default function Study() {
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-accent-green" />
                 <span className="text-[10px] text-text-muted">已完成</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-accent-green" />
+                <span className="text-[10px] text-text-muted">已选中</span>
               </div>
             </div>
           </Card>
