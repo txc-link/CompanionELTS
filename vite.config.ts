@@ -9,6 +9,7 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') }
   },
   server: {
+    allowedHosts: ['192.168.64.6', 'localhost'],
     proxy: {
       // 百度翻译 API (OAuth + 翻译)
       '/api/baidu': {

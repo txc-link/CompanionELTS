@@ -132,13 +132,13 @@ export async function translateWithXf(
     const apiKey = getXfApiKey()
     const apiSecret = getXfApiSecret()
 
-    // Body: v2 格式，text 必须 base64 编码
+    // Body: v2 格式，text 必须 base64 编码，compact JSON（无空格）
     const textB64 = btoa(text)
     const body = JSON.stringify({
       common: { app_id: appId },
       business: { from, to },
       data: { text: textB64 },
-    })
+    }, null, 0) // 紧凑格式，无空格
 
     // Digest: SHA-256(body) 并 base64
     const bodyBytes = new TextEncoder().encode(body)
