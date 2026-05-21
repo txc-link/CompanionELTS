@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -7,30 +7,64 @@ import { useStudyStore } from '@/store/studyStore'
 import { cn } from '@/utils/cn'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-function getTodayStr() {
-  return new Date().toISOString().slice(0, 10)
+function pad(n: number) {
+  return String(n).padStart(2, '0')
+}
+
+function toDateStr(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 function getWeekDays() {
   const days = []
   const today = new Date()
   const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
   for (let i = -2; i <= 4; i++) {
     const d = new Date(today)
     d.setDate(today.getDate() + i)
     days.push({
-      date: d.toISOString().slice(0, 10),
+      date: toDateStr(d),
       dayOfWeek: dayNames[d.getDay()],
       dayNumber: d.getDate(),
       isToday: i === 0,
       isCompleted: i < 0,
       hasSession: i <= 1,
-      intensity: Math.min(1, Math.max(0.2, 1 - Math.abs(i) * 0.15)),
     })
   }
   return days
 }
+
+// ─── Multi-Day Mock Data ───────────────────────────────────────────────────
+const ALL_TASKS = [
+  // 周二 5/19
+  { id: 't-19-1', date: '2026-05-19', title: '完成阅读篇章3', category: 'reading', status: 'completed' as const, priority: 'high' as const },
+  { id: 't-19-2', date: '2026-05-19', title: '听力 Section 2 练习', category: 'listening', status: 'completed' as const, priority: 'medium' as const },
+  { id: 't-19-3', date: '2026-05-19', title: '写作 Task2 科技话题', category: 'writing', status: 'completed' as const, priority: 'high' as const },
+  // 周三 5/20
+  { id: 't-20-1', date: '2026-05-20', title: '完成阅读篇章4', category: 'reading', status: 'completed' as const, priority: 'medium' as const },
+  { id: 't-20-2', date: '2026-05-20', title: '听力 Section 3 练习', category: 'listening', status: 'completed' as const, priority: 'medium' as const },
+  { id: 't-20-3', date: '2026-05-20', title: '词汇 List 5-6 复习', category: 'vocabulary', status: 'completed' as const, priority: 'low' as const },
+  { id: 't-20-4', date: '2026-05-20', title: '口语 Part1 练习 5 题', category: 'speaking', status: 'completed' as const, priority: 'medium' as const },
+  // 周四 5/21 (今天)
+  { id: 't-21-1', date: '2026-05-21', title: '完成阅读篇章5', category: 'reading', status: 'pending' as const, priority: 'high' as const },
+  { id: 't-21-2', date: '2026-05-21', title: '听力 Section 4 练习', category: 'listening', status: 'pending' as const, priority: 'medium' as const },
+  { id: 't-21-3', date: '2026-05-21', title: '写作 Task1 图表题', category: 'writing', status: 'pending' as const, priority: 'high' as const },
+  { id: 't-21-4', date: '2026-05-21', title: '语法：虚拟语气复习', category: 'grammar', status: 'pending' as const, priority: 'low' as const },
+  // 周五 5/22
+  { id: 't-22-1', date: '2026-05-22', title: '阅读 Passage 6 精读', category: 'reading', status: 'pending' as const, priority: 'medium' as const },
+  { id: 't-22-2', date: '2026-05-22', title: '听力完整一套', category: 'listening', status: 'pending' as const, priority: 'high' as const },
+  { id: 't-22-3', date: '2026-05-22', title: '写作 Task2 社会话题', category: 'writing', status: 'pending' as const, priority: 'high' as const },
+  // 周六 5/23
+  { id: 't-23-1', date: '2026-05-23', title: '口语 Part2 独立陈述 3 题', category: 'speaking', status: 'pending' as const, priority: 'medium' as const },
+  { id: 't-23-2', date: '2026-05-23', title: '词汇 List 7-8 预习', category: 'vocabulary', status: 'pending' as const, priority: 'low' as const },
+  { id: 't-23-3', date: '2026-05-23', title: '全科模拟测试', category: 'reading', status: 'pending' as const, priority: 'high' as const },
+  // 周日 5/24
+  { id: 't-24-1', date: '2026-05-24', title: '本周错题复盘', category: 'writing', status: 'pending' as const, priority: 'medium' as const },
+  { id: 't-24-2', date: '2026-05-24', title: '口语 Part3 深度讨论', category: 'speaking', status: 'pending' as const, priority: 'medium' as const },
+  // 周一 5/25
+  { id: 't-25-1', date: '2026-05-25', title: '词汇 List 9-10 复习', category: 'vocabulary', status: 'pending' as const, priority: 'low' as const },
+  { id: 't-25-2', date: '2026-05-25', title: '写作模板背诵', category: 'writing', status: 'pending' as const, priority: 'medium' as const },
+]
 
 // ─── SVG Progress Ring ──────────────────────────────────────────────────────
 function ProgressRing({
@@ -61,7 +95,7 @@ function ProgressRing({
         <circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          className="transition-all duration-700 ease-out"
+          className="transition-all duration-500 ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -73,7 +107,7 @@ function ProgressRing({
   )
 }
 
-// ─── Mock Data ──────────────────────────────────────────────────────────────
+// ─── Category Config ─────────────────────────────────────────────────────────
 const categoryColors: Record<string, string> = {
   reading: 'bg-info/15 text-info',
   listening: 'bg-accent-green/15 text-accent-green',
@@ -92,21 +126,14 @@ const categoryLabels: Record<string, string> = {
   grammar: '语法',
 }
 
-const mockTasks = [
-  { id: '1', title: '完成阅读篇章3', category: 'reading', priority: 'high', status: 'pending' as const },
-  { id: '2', title: '复习词汇表 - 第四周', category: 'vocabulary', priority: 'medium', status: 'pending' as const },
-  { id: '3', title: '写作Task2作文：科技话题', category: 'writing', priority: 'high', status: 'completed' as const },
-  { id: '4', title: '听力练习 - Section 4', category: 'listening', priority: 'medium', status: 'pending' as const },
-  { id: '5', title: '口语模拟测试 - Part 2', category: 'speaking', priority: 'low', status: 'pending' as const },
-  { id: '6', title: '语法：条件句复习', category: 'grammar', priority: 'medium', status: 'completed' as const },
-]
-
-const mockAchievements = [
-  { id: 'a1', title: '连续7天', icon: '🔥', progress: 5, total: 7, unlocked: false },
-  { id: 'a2', title: '首篇作文', icon: '✍️', progress: 1, total: 1, unlocked: true },
-  { id: 'a3', title: '听力大师', icon: '🎧', progress: 8, total: 10, unlocked: false },
-  { id: 'a4', title: '词汇之星', icon: '📚', progress: 24, total: 50, unlocked: false },
-]
+const categoryIcons: Record<string, string> = {
+  reading: '📖',
+  listening: '🎧',
+  writing: '✍️',
+  speaking: '🎤',
+  vocabulary: '📚',
+  grammar: '🧠',
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -115,15 +142,29 @@ export default function Dashboard() {
   const [aiSuggestion] = useState(
     '根据你近期的表现，建议重点提升阅读分数。尝试使用扫读技巧来练习篇章3。'
   )
-  const [tasks] = useState(mockTasks)
-  const [completedTasks, setCompletedTasks] = useState<Set<string>>(
-    new Set(mockTasks.filter((t) => t.status === 'completed').map((t) => t.id))
-  )
 
   const weekDays = getWeekDays()
-  // Default selected date to today
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayStr)
+  const todayStr = toDateStr(new Date())
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr)
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(
+    new Set(ALL_TASKS.filter((t) => t.status === 'completed').map((t) => t.id))
+  )
 
+  // 选中日期的任务
+  const dayTasks = useMemo(
+    () => ALL_TASKS.filter((t) => t.date === selectedDate),
+    [selectedDate]
+  )
+
+  // 选中日期的统计数据
+  const dayStats = useMemo(() => {
+    const total = dayTasks.length
+    const completed = dayTasks.filter((t) => completedTasks.has(t.id)).length
+    const pending = total - completed
+    return { total, completed, pending }
+  }, [dayTasks, completedTasks])
+
+  // 切换日期时，显示对应日期的任务完成情况
   const toggleTask = (id: string) => {
     setCompletedTasks((prev) => {
       const next = new Set(prev)
@@ -133,10 +174,18 @@ export default function Dashboard() {
     })
   }
 
-  const mePercent = Math.min(100, ((stats.weekScore || 0) / 9) * 100)
+  const mePercent = dayStats.total > 0
+    ? Math.min(100, (dayStats.completed / dayStats.total) * 100)
+    : 0
   const partnerPercent = partner?.partnerScore
     ? Math.min(100, (partner.partnerScore / 9) * 100)
     : 0
+
+  // 选中日期的中文显示
+  const selectedDayInfo = weekDays.find((d) => d.date === selectedDate)
+  const dateLabel = selectedDayInfo
+    ? `${selectedDayInfo.dayOfWeek} ${selectedDayInfo.dayNumber}`
+    : selectedDate
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-5">
@@ -156,6 +205,11 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {weekDays.map((day) => {
             const isSelected = selectedDate === day.date
+            const dayTasks2 = ALL_TASKS.filter((t) => t.date === day.date)
+            const dayDone = dayTasks2.filter((t) => completedTasks.has(t.id)).length
+            const dayTotal = dayTasks2.length
+            const dayProgress = dayTotal > 0 ? dayDone / dayTotal : 0
+
             return (
               <button
                 key={day.date}
@@ -169,40 +223,44 @@ export default function Dashboard() {
                     : 'bg-bg-elevated text-text-secondary hover:bg-border-subtle border border-transparent'
                 )}
               >
-                <span className="text-[10px] font-medium tracking-wide">
-                  {day.dayOfWeek}
-                </span>
+                <span className="text-[10px] font-medium tracking-wide">{day.dayOfWeek}</span>
                 <span className="text-sm font-bold">{day.dayNumber}</span>
-                {day.hasSession && !isSelected && (
-                  <span className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    day.isCompleted ? 'bg-accent-green' : 'bg-text-muted/50'
-                  )} />
+                {/* Progress dots */}
+                {dayTotal > 0 && !isSelected && (
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: Math.min(dayTotal, 3) }, (_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full transition-all duration-200',
+                          i < dayDone ? 'bg-accent-green' : 'bg-text-muted/40'
+                        )}
+                      />
+                    ))}
+                  </div>
                 )}
-                {isSelected && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-bg-primary/60" />
-                )}
+                {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-bg-primary/60" />}
               </button>
             )
           })}
         </div>
       </Card>
 
-      {/* Dual Progress Rings */}
+      {/* Date Label + Dual Progress */}
       <Card>
         <CardTitle>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="5.5" stroke="#7a9170" strokeWidth="1.5"/>
             <path d="M7 4V7L9 9" stroke="#7a9170" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
-          本周进度
+          {dateLabel} 学习进度
         </CardTitle>
         <div className="flex items-center justify-center gap-10 sm:gap-16 py-2">
           <ProgressRing
             percent={mePercent} color="#6ec56e"
             label="我"
-            value={`${stats.weekScore || 0}/9`}
-            sublabel={user?.nickname || '我'}
+            value={`${dayStats.completed}/${dayStats.total}`}
+            sublabel={`${dayStats.pending}项待完成`}
           />
           <div className="flex flex-col items-center gap-1">
             <div className="w-10 h-10 rounded-full bg-bg-elevated border border-border-subtle flex items-center justify-center">
@@ -223,46 +281,55 @@ export default function Dashboard() {
         <Card variant="stats">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-text-muted">已完成任务</span>
+            <span className="text-lg">✅</span>
+          </div>
+          <p className="text-2xl font-bold text-accent-green">{dayStats.completed}</p>
+          <p className="text-[10px] text-text-muted/60 mt-0.5">今日</p>
+        </Card>
+        <Card variant="stats">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-text-muted">待完成任务</span>
             <span className="text-lg">📋</span>
           </div>
-          <p className="text-2xl font-bold text-text-primary">{stats.weekTasks || 0}</p>
-          <p className="text-[10px] text-text-muted/60 mt-0.5">本周</p>
+          <p className="text-2xl font-bold text-accent-gold">{dayStats.pending}</p>
+          <p className="text-[10px] text-text-muted/60 mt-0.5">今日</p>
         </Card>
         <Card variant="stats">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-text-muted">平均分数</span>
-            <span className="text-lg">⭐</span>
+            <span className="text-xs font-medium text-text-muted">完成率</span>
+            <span className="text-lg">📊</span>
           </div>
-          <p className="text-2xl font-bold text-accent-gold">
-            {stats.weekScore > 0 ? (stats.weekScore / Math.max(1, stats.weekTasks)).toFixed(1) : '0.0'}
+          <p className="text-2xl font-bold text-text-primary">
+            {dayStats.total > 0 ? Math.round((dayStats.completed / dayStats.total) * 100) : 0}%
           </p>
-          <p className="text-[10px] text-text-muted/60 mt-0.5">得分</p>
-        </Card>
-        <Card variant="stats">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-text-muted">红花</span>
-            <span className="text-lg">🌸</span>
-          </div>
-          <p className="text-2xl font-bold text-accent-green">{stats.flowersCollected || 0}</p>
-          <p className="text-[10px] text-text-muted/60 mt-0.5">已收集</p>
+          <p className="text-[10px] text-text-muted/60 mt-0.5">今日</p>
         </Card>
       </div>
 
-      {/* Task List + Achievements */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <Card className="lg:col-span-3">
+      {/* Task List */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
           <CardTitle>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="#7a9170" strokeWidth="1.5"/>
               <path d="M4.5 7L6.5 9L9.5 5" stroke="#7a9170" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            今日任务
+            {dateLabel} 任务
             <span className="ml-auto text-text-muted font-normal normal-case tracking-normal">
-              {completedTasks.size}/{tasks.length}
+              {dayStats.completed}/{dayStats.total}
             </span>
           </CardTitle>
+
+          {dayTasks.length === 0 && (
+            <div className="text-center py-8">
+              <span className="text-3xl">🎉</span>
+              <p className="text-sm text-text-muted mt-2">这一天没有安排任务</p>
+              <Button variant="ghost" size="sm" className="mt-2">去添加</Button>
+            </div>
+          )}
+
           <div className="space-y-1">
-            {tasks.map((task) => {
+            {dayTasks.map((task) => {
               const done = completedTasks.has(task.id)
               return (
                 <button
@@ -273,18 +340,17 @@ export default function Dashboard() {
                     done ? 'bg-accent-green/5' : 'hover:bg-bg-elevated'
                   )}
                 >
-                  <span
-                    className={cn(
-                      'flex-shrink-0 w-[18px] h-[18px] rounded-[4px] border-2 flex items-center justify-center transition-all duration-200',
-                      done ? 'bg-accent-green border-accent-green' : 'border-border-subtle group-hover:border-accent-green/50'
-                    )}
-                  >
+                  <span className={cn(
+                    'flex-shrink-0 w-[18px] h-[18px] rounded-[4px] border-2 flex items-center justify-center transition-all duration-200',
+                    done ? 'bg-accent-green border-accent-green' : 'border-border-subtle'
+                  )}>
                     {done && (
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M2 5L4.5 7.5L8 2.5" stroke="#0f1a12" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                   </span>
+                  <span className="text-lg flex-shrink-0">{categoryIcons[task.category] || '📋'}</span>
                   <span className={cn(
                     'flex-1 text-xs transition-all duration-200',
                     done ? 'text-text-muted line-through' : 'text-text-primary'
@@ -301,64 +367,51 @@ export default function Dashboard() {
               )
             })}
           </div>
-          <div className="mt-3 pt-3 border-t border-border-subtle">
-            <Button variant="ghost" size="sm" className="w-full">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M6 2.5V9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M2.5 6H9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              添加任务
-            </Button>
-          </div>
         </Card>
 
-        {/* Achievements */}
-        <Card className="lg:col-span-2">
+        {/* Category Breakdown */}
+        <Card>
           <CardTitle>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 8.75C9.07107 8.75 10.75 7.07107 10.75 5C10.75 2.92893 9.07107 1.25 7 1.25C4.92893 1.25 3.25 2.92893 3.25 5C3.25 7.07107 4.92893 8.75 7 8.75Z" stroke="#7a9170" strokeWidth="1.5"/>
-              <path d="M4.6875 8L3.75 12.25L7 10.75L10.25 12.25L9.3125 8" stroke="#7a9170" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="7" cy="7" r="5.5" stroke="#7a9170" strokeWidth="1.5"/>
+              <path d="M7 4V7L9 9" stroke="#7a9170" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
-            成就
+            {dateLabel} 各科进度
           </CardTitle>
-          <div className="space-y-2.5">
-            {mockAchievements.map((a) => (
-              <div
-                key={a.id}
-                className={cn(
-                  'flex items-center gap-3 p-2.5 rounded-[10px] transition-all duration-200',
-                  a.unlocked ? 'bg-accent-gold/8 border border-accent-gold/20' : 'bg-bg-elevated/50'
-                )}
-              >
-                <span className="text-lg flex-shrink-0">{a.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={cn('text-xs font-medium', a.unlocked ? 'text-text-primary' : 'text-text-muted')}>
-                      {a.title}
-                    </span>
-                    {a.unlocked ? (
-                      <Badge variant="success" size="sm">已完成</Badge>
-                    ) : (
-                      <span className="text-[9px] text-text-muted/60 flex-shrink-0">
-                        {a.progress}/{a.total}
-                      </span>
-                    )}
+          <div className="space-y-3 mt-2">
+            {(['reading', 'listening', 'writing', 'speaking', 'vocabulary', 'grammar'] as const).map((cat) => {
+              const catTasks = dayTasks.filter((t) => t.category === cat)
+              if (catTasks.length === 0) return null
+              const catDone = catTasks.filter((t) => completedTasks.has(t.id)).length
+              const catTotal = catTasks.length
+              const catPct = catTotal > 0 ? (catDone / catTotal) * 100 : 0
+              const catColor =
+                cat === 'reading' ? '#5b9bd5' :
+                cat === 'listening' ? '#6ec56e' :
+                cat === 'writing' ? '#e8b84b' :
+                cat === 'speaking' ? '#c4893a' :
+                cat === 'vocabulary' ? '#6ec56e' : '#5b9bd5'
+
+              return (
+                <div key={cat}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-text-primary">{categoryIcons[cat]} {categoryLabels[cat]}</span>
+                    <span className="text-xs text-text-muted">{catDone}/{catTotal}</span>
                   </div>
-                  {!a.unlocked && (
-                    <div className="mt-1.5 h-1.5 rounded-full bg-border-subtle overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-accent-green transition-all duration-500"
-                        style={{ width: `${(a.progress / a.total) * 100}%` }}
-                      />
-                    </div>
-                  )}
+                  <div className="h-2 rounded-full bg-border-subtle overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${catPct}%`, backgroundColor: catColor }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+
+            {dayTasks.length === 0 && (
+              <p className="text-sm text-text-muted text-center py-4">暂无任务安排</p>
+            )}
           </div>
-          <Button variant="ghost" size="sm" className="w-full mt-3">
-            查看全部
-          </Button>
         </Card>
       </div>
     </div>
