@@ -11,6 +11,7 @@ const navGroups = [
       { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
       { to: '/study', label: 'Study Plan', icon: 'study' },
       { to: '/timer', label: 'Focus Timer', icon: 'timer' },
+      { to: '/daily', label: 'Daily Messages', icon: 'daily' },
     ],
   },
   {
@@ -20,6 +21,15 @@ const navGroups = [
       { to: '/listening', label: 'Listening', icon: 'listening' },
       { to: '/writing', label: 'Writing', icon: 'writing' },
       { to: '/speaking', label: 'Speaking', icon: 'speaking' },
+      { to: '/vocab', label: 'Vocabulary', icon: 'vocab' },
+      { to: '/skills', label: 'AI Center', icon: 'skills' },
+    ],
+  },
+  {
+    label: 'SOCIAL',
+    items: [
+      { to: '/leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
+      { to: '/square', label: 'Study Square', icon: 'square' },
     ],
   },
   {
@@ -124,6 +134,50 @@ const iconMap: Record<string, React.ReactNode> = {
       <path d="M9 11.25V2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       <path d="M5.25 6L9 2.25L12.75 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M2.25 12V14.25C2.25 15.0784 2.92157 15.75 3.75 15.75H14.25C15.0784 15.75 15.75 15.0784 15.75 14.25V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  daily: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2.25" y="3" width="13.5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M6 1.5V4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M12 1.5V4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M2.25 7.5H15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="5.625" cy="10.5" r="0.75" fill="currentColor"/>
+      <circle cx="9" cy="10.5" r="0.75" fill="currentColor"/>
+      <circle cx="12.375" cy="10.5" r="0.75" fill="currentColor"/>
+    </svg>
+  ),
+  vocab: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="3" width="15" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M4.5 7.5H13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M4.5 10.5H10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M4.5 13.5H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  leaderboard: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 1.5L11.25 7.5H17.25L12.375 11.25L14.625 17.25L9 13.5L3.375 17.25L5.625 11.25L0.75 7.5H6.75L9 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  square: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2.25 9C2.25 13.2728 6.10152 15 9 15C11.8985 15 15.75 13.2728 15.75 9C15.75 4.72715 11.8985 3 9 3C6.10152 3 2.25 4.72715 2.25 9Z" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="9" cy="9" r="2.25" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M5.25 9C5.25 6.96494 6.96494 5.25 9 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  skills: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M9 2.25V4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M9 13.5V15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M2.25 9H4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M13.5 9H15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M3.75 4.5L5.25 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M12.75 12.75L14.25 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M3.75 13.5L5.25 12.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M12.75 5.25L14.25 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
 }

@@ -13,6 +13,17 @@ import Writing from '@/pages/Writing'
 import Upload from '@/pages/Upload'
 import Settings from '@/pages/Settings'
 import Skills from '@/pages/Skills'
+import Study from '@/pages/Study'
+import FocusTimer from '@/pages/FocusTimer'
+import Reading from '@/pages/Reading'
+import Listening from '@/pages/Listening'
+import Speaking from '@/pages/Speaking'
+import Analytics from '@/pages/Analytics'
+import Achievements from '@/pages/Achievements'
+import Vocab from '@/pages/Vocab'
+import Leaderboard from '@/pages/Leaderboard'
+import DailyMessages from '@/pages/DailyMessages'
+import Square from '@/pages/Square'
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -83,14 +94,18 @@ export default function AppLayout() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/study" element={<PlaceholderPage title="Study Plan" />} />
-            <Route path="/timer" element={<PlaceholderPage title="Focus Timer" />} />
-            <Route path="/reading" element={<PlaceholderPage title="Reading Practice" />} />
-            <Route path="/listening" element={<PlaceholderPage title="Listening Practice" />} />
+            <Route path="/study" element={<Study />} />
+            <Route path="/timer" element={<FocusTimer />} />
+            <Route path="/reading" element={<Reading />} />
+            <Route path="/listening" element={<Listening />} />
             <Route path="/writing" element={<Writing />} />
-            <Route path="/speaking" element={<PlaceholderPage title="Speaking Practice" />} />
-            <Route path="/analytics" element={<PlaceholderPage title="Analytics" />} />
-            <Route path="/achievements" element={<PlaceholderPage title="Achievements" />} />
+            <Route path="/speaking" element={<Speaking />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/vocab" element={<Vocab />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/daily" element={<DailyMessages />} />
+            <Route path="/square" element={<Square />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/skills" element={<Skills />} />
