@@ -243,7 +243,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setTestKey(null)
       setTimeout(() => setTestResult(null), 5000)
     }
-  }, [])
+  }, [xfAppId])
 
   return (
     <div className={cn('rounded-[16px] border border-border-subtle bg-bg-card p-[18px]', className)}>
