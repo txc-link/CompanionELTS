@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn'
 const tabs = [
   {
     to: '/dashboard',
-    label: 'Home',
+    label: '首页',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M2.5 7.5L10 1.66667L17.5 7.5V16.6667C17.5 17.1269 17.3264 17.5682 17.017 17.8776C16.7076 18.187 16.2663 18.3607 15.806 18.3607H4.19403C3.73379 18.3607 3.29244 18.187 2.98305 17.8776C2.67367 17.5682 2.5 17.1269 2.5 16.6667V7.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -14,7 +14,7 @@ const tabs = [
   },
   {
     to: '/study',
-    label: 'Study',
+    label: '学习',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3.33333 15.8333V4.16667C3.33333 3.70643 3.50694 3.26508 3.81633 2.95569C4.12572 2.6463 4.56707 2.47269 5.02731 2.47269H15.5556C16.0158 2.47269 16.4572 2.6463 16.7666 2.95569C17.076 3.26508 17.2496 3.70643 17.2496 4.16667V13.3333H3.33333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -24,7 +24,7 @@ const tabs = [
   },
   {
     to: '/timer',
-    label: 'Timer',
+    label: '计时',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="10" cy="11.5" r="5.83333" stroke="currentColor" strokeWidth="1.5"/>
@@ -37,7 +37,7 @@ const tabs = [
   },
   {
     to: '/analytics',
-    label: 'Stats',
+    label: '分析',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="1.66667" y="11.6667" width="4.16667" height="6.66667" rx="1" stroke="currentColor" strokeWidth="1.5"/>
@@ -48,7 +48,7 @@ const tabs = [
   },
   {
     to: '/settings',
-    label: 'Profile',
+    label: '我的',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="10" cy="7.5" r="3.33333" stroke="currentColor" strokeWidth="1.5"/>

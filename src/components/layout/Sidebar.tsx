@@ -6,44 +6,44 @@ import { useUIStore } from '@/store/uiStore'
 
 const navGroups = [
   {
-    label: 'MAIN MENU',
+    label: '主菜单',
     items: [
-      { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-      { to: '/study', label: 'Study Plan', icon: 'study' },
-      { to: '/timer', label: 'Focus Timer', icon: 'timer' },
-      { to: '/daily', label: 'Daily Messages', icon: 'daily' },
+      { to: '/dashboard', label: '首页', icon: 'dashboard' },
+      { to: '/study', label: '学习计划', icon: 'study' },
+      { to: '/timer', label: '专注计时', icon: 'timer' },
+      { to: '/daily', label: '每日消息', icon: 'daily' },
     ],
   },
   {
-    label: 'SKILLS',
+    label: '技能训练',
     items: [
-      { to: '/reading', label: 'Reading', icon: 'reading' },
-      { to: '/listening', label: 'Listening', icon: 'listening' },
-      { to: '/writing', label: 'Writing', icon: 'writing' },
-      { to: '/speaking', label: 'Speaking', icon: 'speaking' },
-      { to: '/vocab', label: 'Vocabulary', icon: 'vocab' },
-      { to: '/skills', label: 'AI Center', icon: 'skills' },
+      { to: '/reading', label: '阅读', icon: 'reading' },
+      { to: '/listening', label: '听力', icon: 'listening' },
+      { to: '/writing', label: '写作', icon: 'writing' },
+      { to: '/speaking', label: '口语', icon: 'speaking' },
+      { to: '/vocab', label: '词汇', icon: 'vocab' },
+      { to: '/skills', label: 'AI 中心', icon: 'skills' },
     ],
   },
   {
-    label: 'SOCIAL',
+    label: '社交',
     items: [
-      { to: '/leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
-      { to: '/square', label: 'Study Square', icon: 'square' },
+      { to: '/leaderboard', label: '排行榜', icon: 'leaderboard' },
+      { to: '/square', label: '学习广场', icon: 'square' },
     ],
   },
   {
-    label: 'PROGRESS',
+    label: '数据',
     items: [
-      { to: '/analytics', label: 'Analytics', icon: 'analytics' },
-      { to: '/achievements', label: 'Achievements', icon: 'achievements' },
+      { to: '/analytics', label: '分析', icon: 'analytics' },
+      { to: '/achievements', label: '成就', icon: 'achievements' },
     ],
   },
   {
-    label: 'SYSTEM',
+    label: '系统',
     items: [
-      { to: '/settings', label: 'Settings', icon: 'settings' },
-      { to: '/upload', label: 'Upload', icon: 'upload' },
+      { to: '/settings', label: '设置', icon: 'settings' },
+      { to: '/upload', label: '上传中心', icon: 'upload' },
     ],
   },
 ]
@@ -253,7 +253,7 @@ export function Sidebar() {
         <div className="flex-shrink-0 p-3 border-t border-border-subtle">
           <div className="rounded-[10px] bg-bg-elevated p-3">
             <p className="text-[10px] font-semibold text-text-muted uppercase tracking-[1px] mb-2">
-              PARTNER
+              搭子
             </p>
             {partner?.isBound ? (
               <div className="flex items-center gap-2.5">

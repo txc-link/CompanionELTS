@@ -3,18 +3,23 @@ import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
 
 const pageTitles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/dashboard': 'Dashboard',
-  '/study': 'Study Plan',
-  '/timer': 'Focus Timer',
-  '/reading': 'Reading Practice',
-  '/listening': 'Listening Practice',
-  '/writing': 'Writing Practice',
-  '/speaking': 'Speaking Practice',
-  '/analytics': 'Analytics',
-  '/achievements': 'Achievements',
-  '/settings': 'Settings',
-  '/upload': 'Upload Materials',
+  '/': '首页',
+  '/dashboard': '首页',
+  '/study': '学习计划',
+  '/timer': '专注计时',
+  '/reading': '阅读练习',
+  '/listening': '听力练习',
+  '/writing': '写作练习',
+  '/speaking': '口语练习',
+  '/analytics': '分析',
+  '/achievements': '成就',
+  '/settings': '设置',
+  '/upload': '上传中心',
+  '/vocab': '词汇',
+  '/skills': 'AI 中心',
+  '/leaderboard': '排行榜',
+  '/square': '学习广场',
+  '/daily': '每日消息',
 }
 
 export function Header() {
