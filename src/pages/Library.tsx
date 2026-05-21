@@ -383,37 +383,70 @@ export default function Library() {
     setVocabSidebarOpen(true)
   }, [activeBook])
 
-  // ─── Highlight ───────────────────────────────────────────────────────
-  const addHighlight = useCallback((text: string, color: 'yellow' | 'green' | 'blue' | 'pink') => {
+  // ─── Reader-Scoped State for Instant Feedback ─────────────────────────
+  const [readerHighlights, setReaderHighlights] = useState<Highlight[]>([])
+  const [readerNotes, setReaderNotes] = useState<Note[]>([])
+
+  // Sync from activeBook when entering reader
+  useEffect(() => {
+    if (activeBook && activeView === 'reader') {
+      setReaderHighlights(activeBook.highlights)
+      setReaderNotes(activeBook.notes)
+    }
+  }, [activeBookId, activeView]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Merge reader highlights/notes back into books when exiting
+  const flushToBooks = useCallback(() => {
     if (!activeBookId) return
     setBooks((prev) => prev.map((b) => {
       if (b.id !== activeBookId) return b
-      const existing = b.highlights.find((h) => h.text === text && h.paragraphIdx === currentPage)
-      if (existing) return { ...b, highlights: b.highlights.map((h) => h.id === existing.id ? { ...h, color } : h) }
-      return { ...b, highlights: [...b.highlights, { id: `hl-${Date.now()}`, text, color, bookId: b.id, paragraphIdx: currentPage, createdAt: new Date().toISOString() }] }
+      return { ...b, highlights: readerHighlights, notes: readerNotes, progress: Math.round((currentPage / Math.max(1, b.content.length)) * 100) }
     }))
+  }, [activeBookId, readerHighlights, readerNotes, currentPage])
+
+  // ─── Highlight ───────────────────────────────────────────────────────
+  const addHighlight = useCallback((text: string, color: 'yellow' | 'green' | 'blue' | 'pink') => {
+    const id = `hl-${Date.now()}`
+    const paraIdx = currentPage
+    setReaderHighlights((prev) => {
+      const existing = prev.find((h) => h.text === text && h.paragraphIdx === paraIdx)
+      if (existing) return prev.map((h) => h.id === existing.id ? { ...h, color } : h)
+      return [...prev, { id, text, color, bookId: activeBookId || '', paragraphIdx: paraIdx, createdAt: new Date().toISOString() }]
+    })
     setSelection((s) => ({ ...s, visible: false }))
   }, [activeBookId, currentPage])
+
+  const removeHighlight = useCallback((id: string) => {
+    setReaderHighlights((prev) => prev.filter((h) => h.id !== id))
+  }, [])
 
   // ─── Notes ───────────────────────────────────────────────────────────
   const addNote = useCallback((noteText: string) => {
     if (!activeBookId || !noteTarget) return
-    setBooks((prev) => prev.map((b) => {
-      if (b.id !== activeBookId) return b
-      return { ...b, notes: [...b.notes, { id: `n-${Date.now()}`, text: noteText, bookId: b.id, paragraphIdx: currentPage, createdAt: new Date().toISOString() }] }
-    }))
+    setReaderNotes((prev) => [...prev, { id: `n-${Date.now()}`, text: noteText, bookId: activeBookId, paragraphIdx: currentPage, createdAt: new Date().toISOString() }])
     setNoteTarget(null)
   }, [activeBookId, currentPage, noteTarget])
 
-  // ─── Navigation ──────────────────────────────────────────────────────
-  const openReader = (bookId: string) => { setActiveBookId(bookId); setActiveView('reader'); setCurrentPage(0); setReadingTime(0) }
-  const exitReader = () => setActiveView('shelf')
+  // Exit reader and persist
+  const exitReader = useCallback(() => {
+    flushToBooks()
+    setActiveView('shelf')
+  }, [flushToBooks])
+
+  // Navigation
+  const openReader = useCallback((bookId: string) => {
+    setActiveBookId(bookId)
+    setActiveView('reader')
+    setCurrentPage(0)
+    setReadingTime(0)
+  }, [])
+
   const nextPage = () => { if (currentPage < maxPages - 1) setCurrentPage((p) => p + 1) }
   const prevPage = () => { if (currentPage > 0) setCurrentPage((p) => p - 1) }
 
-  // ─── Compute highlights for current page ────────────────────────────
-  const pageHighlights = activeBook?.highlights.filter((h) => h.paragraphIdx === currentPage) || []
-  const pageNotes = activeBook?.notes.filter((n) => n.paragraphIdx === currentPage) || []
+  // Compute page-level data from reader-scoped state
+  const pageHighlights = readerHighlights.filter((h) => h.paragraphIdx === currentPage)
+  const pageNotes = readerNotes.filter((n) => n.paragraphIdx === currentPage)
 
   // ─── SHELF VIEW ─────────────────────────────────────────────────────
   if (activeView === 'shelf') {
@@ -577,8 +610,8 @@ export default function Library() {
             <div className="space-y-4">
               {contentLines.slice(currentPage, currentPage + 3).map((line, idx) => {
                 const paraIdx = currentPage + idx
-                const hl = activeBook.highlights.filter((h) => h.paragraphIdx === paraIdx)
-                const note = activeBook.notes.find((n) => n.paragraphIdx === paraIdx)
+                const hl = readerHighlights.filter((h) => h.paragraphIdx === paraIdx)
+                const note = readerNotes.find((n) => n.paragraphIdx === paraIdx)
                 const isMDTitle = line.startsWith('#')
 
                 return (
@@ -638,7 +671,7 @@ export default function Library() {
                     <div className="w-3 h-3 rounded mt-0.5 flex-shrink-0" style={{ backgroundColor: HIGHLIGHT_COLOR_MAP[h.color] || '#fbbf24' }} />
                     <span className="text-text-secondary">{h.text}</span>
                     <button
-                      onClick={() => setBooks((prev) => prev.map((b) => b.id === activeBookId ? { ...b, highlights: b.highlights.filter((h2) => h2.id !== h.id) } : b))}
+                      onClick={() => removeHighlight(h.id)}
                       className="text-text-muted hover:text-danger cursor-pointer"
                     >
                       ✕
