@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/utils/cn'
+import TranslationConfig from '@/components/ui/TranslationConfig'
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────
 const targetScores = ['6.0', '6.5', '7.0', '7.5']
@@ -253,6 +254,9 @@ export default function Settings() {
           </label>
         </div>
       </Card>
+
+      {/* Translation Settings */}
+      <TranslationConfig />
 
       {/* Danger Zone */}
       <Card className="!border-danger/30">

@@ -4,6 +4,7 @@ import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { lookupWord, buildVocabWord, type VocabWord } from '@/lib/dictionary'
+import { translateWithGoogle, getGoogleApiKey, setGoogleApiKey } from '@/lib/translate'
 import { useVocabTaskStore } from '@/store/vocabStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -13,6 +14,57 @@ interface SelectedTextState {
   x: number
   y: number
   visible: boolean
+}
+
+// Word index for paragraph-level hover tracking
+interface HoverState {
+  paraIdx: number
+  wordIdx: number
+  word: string
+}
+
+// Render paragraph text with clickable/hoverable word spans
+function ParagraphText({ para, paraIdx, hoverState, onWordHover, onWordLeave, onWordClick }: {
+  para: string
+  paraIdx: number
+  hoverState: HoverState | null
+  onWordHover: (paraIdx: number, wordIdx: number, word: string) => void
+  onWordLeave: () => void
+  onWordClick: (word: string) => void
+}) {
+  // Split text into word tokens (preserving whitespace and punctuation)
+  const tokens = para.split(/(\s+|[.,;:!?'"()[\]{}—–-])/)
+  let wordIdx = 0
+
+  return (
+    <span>
+      {tokens.map((token, i) => {
+        // Skip empty tokens
+        if (!token) return null
+        // Whitespace / punctuation — render as-is
+        if (/^[\s.,;:!?'"()[\]{}—–-]+$/.test(token)) {
+          return <span key={i}>{token}</span>
+        }
+        const currentWordIdx = wordIdx++
+        const isHovered = hoverState?.paraIdx === paraIdx && hoverState?.wordIdx === currentWordIdx
+
+        return (
+          <span
+            key={i}
+            onMouseEnter={() => onWordHover(paraIdx, currentWordIdx, token)}
+            onMouseLeave={() => onWordLeave()}
+            onClick={() => onWordClick(token)}
+            className={cn(
+              'rounded px-[1px] transition-all duration-150 cursor-pointer',
+              isHovered ? 'bg-accent-green/20 text-accent-green' : 'hover:bg-accent-green/10'
+            )}
+          >
+            {token}
+          </span>
+        )
+      })}
+    </span>
+  )
 }
 
 // ─── Paragraph Translations (mock) ───────────────────────────────────────
@@ -124,6 +176,19 @@ function TranslationPopover({
 }) {
   const words = text.trim().split(/\s+/)
   const firstWord = lookupWord(words[0])
+  const [gtResult, setGtResult] = useState<string | null>(null)
+  const [gtLoading, setGtLoading] = useState(false)
+
+  // Auto-translate via Google on open
+  useEffect(() => {
+    if (getGoogleApiKey()) {
+      setGtLoading(true)
+      translateWithGoogle(text).then((r) => {
+        if (r) setGtResult(r)
+        setGtLoading(false)
+      })
+    }
+  }, [text])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in" onClick={onClose}>
@@ -153,6 +218,25 @@ function TranslationPopover({
 
         {/* Translation content */}
         <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
+          {/* Google Translate result */}
+          {gtLoading && (
+            <div className="rounded-[10px] bg-info/8 border border-info/20 p-3 flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-info border-t-transparent animate-spin" />
+              <span className="text-xs text-text-muted">翻译中...</span>
+            </div>
+          )}
+          {gtResult && (
+            <div className="rounded-[10px] bg-accent-blue/8 border border-accent-blue/20 p-3">
+              <p className="text-xs font-semibold text-text-muted mb-1">🌐 Google 翻译</p>
+              <p className="text-sm text-text-primary leading-relaxed">{gtResult}</p>
+            </div>
+          )}
+          {!gtResult && !gtLoading && (
+            <div className="rounded-[10px] bg-accent-gold/8 border border-accent-gold/20 p-3">
+              <p className="text-xs font-semibold text-text-primary">⚠️ 翻译未配置</p>
+              <p className="text-xs text-text-muted mt-0.5">请在设置页面配置 Google 翻译 API Key</p>
+            </div>
+          )}
           {words.length === 1 && firstWord ? (
             <>
               <div className="rounded-[10px] bg-accent-green/8 border border-accent-green/20 p-3">
@@ -166,19 +250,8 @@ function TranslationPopover({
             </>
           ) : (
             <div className="rounded-[10px] bg-accent-green/8 border border-accent-green/20 p-3">
-              <p className="text-xs font-semibold text-text-muted mb-1">中文翻译</p>
-              <p className="text-sm text-text-primary leading-relaxed">
-                {/* Multi-word: use machine-translation-style rendering */}
-                {text}：该短语/句子在当前语境下的翻译会根据上下文有所不同。建议逐个单词查询以获得更准确的理解。
-              </p>
-            </div>
-          )}
-
-          {/* Word breakdown for multi-word selections */}
-          {words.length > 1 && (
-            <div>
-              <p className="text-xs font-semibold text-text-muted mb-2">单词拆解</p>
-              <div className="space-y-2">
+              <p className="text-xs font-semibold text-text-muted mb-1">单词拆解</p>
+              <div className="space-y-2 mt-2">
                 {words.map((w, i) => {
                   const info = lookupWord(w)
                   return (
@@ -273,6 +346,26 @@ export default function Reading() {
 
   // Shared vocab store
   const { addWord, removeWord, vocabList } = useVocabTaskStore()
+
+  // Hover state for word-level interaction
+  const [hoverState, setHoverState] = useState<HoverState | null>(null)
+
+  const handleWordHover = useCallback((paraIdx: number, wordIdx: number, word: string) => {
+    setHoverState({ paraIdx, wordIdx, word })
+  }, [])
+
+  const handleWordLeave = useCallback(() => {
+    setHoverState(null)
+  }, [])
+
+  // Single-click on word → show translation + offer to add
+  const handleWordClick = useCallback((word: string) => {
+    // Clean word text for lookup
+    const clean = word.replace(/[^a-zA-Z'-]/g, '')
+    if (!clean) return
+    setTranslateText(clean)
+    setHoverState(null)
+  }, [])
 
   // Paragraph translations toggle
   const [showParaTrans, setShowParaTrans] = useState<Set<number>>(new Set())
@@ -437,7 +530,14 @@ export default function Reading() {
                       'text-sm leading-[1.9] transition-all duration-200',
                       translateText ? 'text-text-secondary' : 'text-text-primary'
                     )}>
-                      {para}
+                      <ParagraphText
+                        para={para}
+                        paraIdx={idx}
+                        hoverState={hoverState}
+                        onWordHover={handleWordHover}
+                        onWordLeave={handleWordLeave}
+                        onWordClick={handleWordClick}
+                      />
                     </p>
                     {/* Paragraph translate button */}
                     <button
