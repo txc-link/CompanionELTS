@@ -166,8 +166,9 @@ export async function translateWithXf(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Host': XF_HOST,
-        'Date': dateStr,
+        // 浏览器环境无法手动设置 Host/Date（属于 forbidden headers），
+        // 使用 X-Date 作为替代，讯飞 HMAC 鉴权也接受 x-date。
+        'X-Date': dateStr,
         'Digest': digest,
         'Authorization': auth,
       },
