@@ -4,7 +4,7 @@ import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { lookupWord, buildVocabWord, type VocabWord } from '@/lib/dictionary'
-import { translateWithGoogle, getGoogleApiKey, setGoogleApiKey } from '@/lib/translate'
+import { SERVICE_LABEL, isAnyTranslatorConfigured, translateAuto } from '@/lib/translateAuto'
 import { useVocabTaskStore } from '@/store/vocabStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -176,18 +176,17 @@ function TranslationPopover({
 }) {
   const words = text.trim().split(/\s+/)
   const firstWord = lookupWord(words[0])
-  const [gtResult, setGtResult] = useState<string | null>(null)
-  const [gtLoading, setGtLoading] = useState(false)
+  const [trResult, setTrResult] = useState<{ provider: keyof typeof SERVICE_LABEL; result: string } | null>(null)
+  const [trLoading, setTrLoading] = useState(false)
 
-  // Auto-translate via Google on open
+  // Auto-translate via enabled services on open
   useEffect(() => {
-    if (getGoogleApiKey()) {
-      setGtLoading(true)
-      translateWithGoogle(text).then((r) => {
-        if (r) setGtResult(r)
-        setGtLoading(false)
-      })
-    }
+    if (!isAnyTranslatorConfigured()) return
+    setTrLoading(true)
+    translateAuto(text, 'en', 'zh').then((r) => {
+      if (r) setTrResult(r)
+      setTrLoading(false)
+    })
   }, [text])
 
   return (
@@ -218,23 +217,23 @@ function TranslationPopover({
 
         {/* Translation content */}
         <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
-          {/* Google Translate result */}
-          {gtLoading && (
+          {/* Translation result */}
+          {trLoading && (
             <div className="rounded-[10px] bg-info/8 border border-info/20 p-3 flex items-center gap-2">
               <div className="w-4 h-4 rounded-full border-2 border-info border-t-transparent animate-spin" />
               <span className="text-xs text-text-muted">翻译中...</span>
             </div>
           )}
-          {gtResult && (
+          {trResult && (
             <div className="rounded-[10px] bg-accent-blue/8 border border-accent-blue/20 p-3">
-              <p className="text-xs font-semibold text-text-muted mb-1">🌐 Google 翻译</p>
-              <p className="text-sm text-text-primary leading-relaxed">{gtResult}</p>
+              <p className="text-xs font-semibold text-text-muted mb-1">🌐 {SERVICE_LABEL[trResult.provider]}</p>
+              <p className="text-sm text-text-primary leading-relaxed">{trResult.result}</p>
             </div>
           )}
-          {!gtResult && !gtLoading && (
+          {!trResult && !trLoading && (
             <div className="rounded-[10px] bg-accent-gold/8 border border-accent-gold/20 p-3">
               <p className="text-xs font-semibold text-text-primary">⚠️ 翻译未配置</p>
-              <p className="text-xs text-text-muted mt-0.5">请在设置页面配置 Google 翻译 API Key</p>
+              <p className="text-xs text-text-muted mt-0.5">请在设置页面启用并配置任意一个翻译服务（百度/有道/讯飞/Google）</p>
             </div>
           )}
           {words.length === 1 && firstWord ? (

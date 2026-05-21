@@ -9,6 +9,7 @@
 
 const XF_API_KEY_KEY = 'xftranslate_api_key'
 const XF_API_SECRET_KEY = 'xftranslate_api_secret'
+const XF_APP_ID_KEY = 'xftranslate_app_id'
 const XF_API_URL = '/api/xf/v2/ots'
 const XF_HDR_API_KEY = 'x-xf-api-key'
 const XF_HDR_API_SECRET = 'x-xf-api-secret'
@@ -34,6 +35,8 @@ export function getXfApiKey(): string { try { return localStorage.getItem(XF_API
 export function setXfApiKey(key: string) { try { localStorage.setItem(XF_API_KEY_KEY, key) } catch {} }
 export function getXfApiSecret(): string { try { return localStorage.getItem(XF_API_SECRET_KEY) || '' } catch { return '' } }
 export function setXfApiSecret(key: string) { try { localStorage.setItem(XF_API_SECRET_KEY, key) } catch {} }
+export function getXfAppId(): string { try { return localStorage.getItem(XF_APP_ID_KEY) || '' } catch { return '' } }
+export function setXfAppId(id: string) { try { localStorage.setItem(XF_APP_ID_KEY, id) } catch {} }
 export function isXfConfigured(): boolean { return !!(getXfApiKey() && getXfApiSecret()) }
 
 function normalizeLangForNiutrans(lang: string): string {
