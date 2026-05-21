@@ -344,7 +344,7 @@ export default function Reading() {
   const [vocabSidebarOpen, setVocabSidebarOpen] = useState(false)
 
   // Shared vocab store
-  const { addWord, removeWord, vocabList } = useVocabTaskStore()
+  const { addWord, removeWord, vocabList, addToStudyPlan, removeFromStudyPlan } = useVocabTaskStore()
 
   // Hover state for word-level interaction
   const [hoverState, setHoverState] = useState<HoverState | null>(null)
@@ -396,12 +396,16 @@ export default function Reading() {
   const addToVocab = useCallback((text: string) => {
     const newWord = buildVocabWord(text, { sourceParagraph: text.substring(0, 80) })
     addWord(newWord)
+    // 同时加入今日学习计划
+    addToStudyPlan([newWord])
     setSelection((s) => ({ ...s, visible: false }))
     setVocabSidebarOpen(true)
-  }, [addWord])
+  }, [addWord, addToStudyPlan])
 
   const removeVocab = useCallback((id: string) => {
     removeWord(id)
+    // 从今日学习计划中同步移除
+    removeFromStudyPlan(id)
   }, [removeWord])
 
   const toggleParaTrans = (idx: number) => {

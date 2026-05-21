@@ -299,7 +299,7 @@ export default function Library() {
   const [noteTarget, setNoteTarget] = useState<string | null>(null)
 
   // Shared vocab store
-  const { addWord, removeWord, vocabList } = useVocabTaskStore()
+  const { addWord, removeWord, vocabList, addToStudyPlan, removeFromStudyPlan } = useVocabTaskStore()
 
   const activeBook = books.find((b) => b.id === activeBookId) || null
   const contentLines = activeBook?.content || []
@@ -375,8 +375,10 @@ export default function Library() {
   const addToVocab = useCallback((text: string) => {
     const newWord = buildVocabWord(text, { sourceBook: activeBook?.title })
     addWord(newWord)
+    // 同时加入今日学习计划
+    addToStudyPlan([newWord])
     setVocabSidebarOpen(true)
-  }, [activeBook, addWord])
+  }, [activeBook, addWord, addToStudyPlan])
 
   // ─── Reader-Scoped State for Instant Feedback ─────────────────────────
   const [readerHighlights, setReaderHighlights] = useState<Highlight[]>([])

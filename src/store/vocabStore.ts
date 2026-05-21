@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { VocabWord } from '@/lib/dictionary'
 import type { StudyTask } from '@/types/study'
+import { useStudyStore } from './studyStore'
 
 export interface VocabPlan {
   totalWords: number
@@ -24,6 +25,11 @@ interface VocabTaskState {
   // 计划操作
   setPlanTotal: (total: number) => void
   setDailyTarget: (target: number) => void
+
+  // 加入今日学习计划（Study 页面任务）
+  addToStudyPlan: (words: VocabWord[]) => void
+  removeFromStudyPlan: (wordId: string) => void
+  isInStudyPlan: (wordId: string) => boolean
 }
 
 export const useVocabTaskStore = create<VocabTaskState>((set, get) => ({
@@ -83,6 +89,45 @@ export const useVocabTaskStore = create<VocabTaskState>((set, get) => ({
       const estimatedDays = target > 0 ? Math.ceil(remaining / target) : remaining
       return { vocabPlan: { ...s.vocabPlan, dailyTarget: target, estimatedDays } }
     }),
+
+  // ─── 学习计划操作 ─────────────────────────────────────────────
+  // 将单词加入今日学习计划（生成 StudyTask 写入 useStudyStore）
+  addToStudyPlan: (words) => {
+    const today = new Date().toISOString().slice(0, 10)
+    words.forEach((word) => {
+      const taskId = `vocab-${word.id}-${today}`
+      const studyStore = useStudyStore.getState()
+      const exists = studyStore.tasks.some((t) => t.id === taskId)
+      if (!exists) {
+        const task: StudyTask = {
+          id: taskId,
+          userId: 'current',
+          title: word.word,
+          description: word.meaning || '从阅读中收藏的生词',
+          category: 'vocabulary',
+          priority: 'medium',
+          status: 'pending',
+          dueDate: today,
+          createdAt: new Date().toISOString(),
+        }
+        useStudyStore.getState().addTask(task)
+      }
+    })
+  },
+
+  // 从学习计划中移除某单词
+  removeFromStudyPlan: (wordId) => {
+    const today = new Date().toISOString().slice(0, 10)
+    const taskId = `vocab-${wordId}-${today}`
+    useStudyStore.getState().removeTask(taskId)
+  },
+
+  // 检查某单词是否已加入今日学习计划
+  isInStudyPlan: (wordId) => {
+    const today = new Date().toISOString().slice(0, 10)
+    const taskId = `vocab-${wordId}-${today}`
+    return useStudyStore.getState().tasks.some((t) => t.id === taskId)
+  },
 }))
 
 /** 将单词转为今日 StudyTask（供 Study/Dashboard 组件使用） */

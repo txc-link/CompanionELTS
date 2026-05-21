@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Card, CardTitle } from '@/components/ui/Card'
+import { useStudyStore } from '@/store/studyStore'
+import { useVocabTaskStore } from '@/store/vocabStore'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -213,6 +215,10 @@ export default function Study() {
   const thisYear = today.getFullYear()
   const thisMonth = today.getMonth() // 0-indexed
 
+  // ─── 真实数据：来自 store 的任务（收藏单词等）─────────────────────────
+  const { tasks: realTasks, toggleTaskStatus } = useStudyStore()
+  const { vocabList } = useVocabTaskStore()
+
   const [currentYear, setCurrentYear] = useState(thisYear)
   const [currentMonth, setCurrentMonth] = useState(thisMonth)
   const [selectedDate, setSelectedDate] = useState<string>(toDateStr(today))
@@ -220,25 +226,77 @@ export default function Study() {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskCategory, setNewTaskCategory] = useState<string>('reading')
   const [newTaskPriority, setNewTaskPriority] = useState<string>('medium')
+  // Mock 任务完成状态（仅用于 mock 任务，真实任务由 store 管理）
   const [completedIds, setCompletedIds] = useState<Set<string>>(
     new Set(MAY_TASKS.filter((t) => t.status === 'completed').map((t) => t.id))
   )
 
   const calendarDays = buildCalendarDays(currentYear, currentMonth, selectedDate)
 
-  // Selected day's tasks - ALL tasks (both pending and completed), completed first
-  const selectedDayTasks = useMemo(
-    () => MAY_TASKS.filter((t) => t.date === selectedDate)
-      .sort((a, b) => {
-        const aDone = completedIds.has(a.id)
-        const bDone = completedIds.has(b.id)
-        if (aDone === bDone) return 0
-        return aDone ? -1 : 1 // completed first
-      }),
-    [selectedDate, completedIds]
+  // ─── 合并真实任务与 mock 任务 ──────────────────────────────────────────
+  // 真实任务中，按 selectedDate 过滤
+  const todayTasks = useMemo(() => realTasks.filter((t) => t.dueDate === selectedDate), [realTasks, selectedDate])
+
+  // 今日所有任务：mock 任务 + 真实词汇任务，completed 先显示
+  const selectedDayTasks = useMemo(() => {
+    const mockTasksForDay = MAY_TASKS.filter((t) => t.date === selectedDate).map((t) => ({
+      id: t.id,
+      userId: 'mock',
+      title: t.title,
+      description: undefined,
+      category: t.category,
+      priority: t.priority,
+      status: completedIds.has(t.id) ? 'completed' as const : 'pending' as const,
+      dueDate: t.date,
+      createdAt: new Date().toISOString(),
+    }))
+    const realTasksForDay = todayTasks.map((t) => ({
+      id: t.id,
+      userId: t.userId,
+      title: t.title,
+      description: t.description,
+      category: t.category,
+      priority: t.priority,
+      status: t.status,
+      dueDate: t.dueDate,
+      createdAt: t.createdAt,
+    }))
+    const all = [...mockTasksForDay, ...realTasksForDay]
+    return all.sort((a, b) => {
+      if (a.status === 'completed' && b.status !== 'completed') return -1
+      if (a.status !== 'completed' && b.status === 'completed') return 1
+      return 0
+    })
+  }, [selectedDate, completedIds, todayTasks])
+
+  const dayPending = selectedDayTasks.filter((t) => t.status === 'pending')
+  const dayCompleted = selectedDayTasks.filter((t) => t.status === 'completed')
+
+  // ─── 切换任务完成状态 ──────────────────────────────────────────────────
+  function handleToggleTask(id: string, userId: string) {
+    if (userId === 'mock') {
+      // Mock 任务：在本地状态中切换
+      setCompletedIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    } else {
+      // 真实任务：调用 store
+      toggleTaskStatus(id)
+    }
+  }
+
+  // ─── 词汇任务统计 ───────────────────────────────────────────────────────
+  const vocabTasks = useMemo(
+    () => realTasks.filter((t) => t.category === 'vocabulary'),
+    [realTasks]
   )
-  const dayPending = selectedDayTasks.filter((t) => !completedIds.has(t.id))
-  const dayCompleted = selectedDayTasks.filter((t) => completedIds.has(t.id))
+  const vocabTodayCount = vocabTasks.filter((t) => t.dueDate === selectedDate).length
+  const vocabDoneCount = vocabTasks.filter(
+    (t) => t.dueDate === selectedDate && t.status === 'completed'
+  ).length
 
   // Week stats: current week's completed/pending
   const weekStart = useMemo(() => {
@@ -301,15 +359,6 @@ export default function Study() {
     } else {
       setCurrentMonth((m) => m + 1)
     }
-  }
-
-  function toggleTask(id: string) {
-    setCompletedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   }
 
   return (
@@ -458,11 +507,11 @@ export default function Study() {
             {/* All tasks: completed first, then pending */}
             <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
               {selectedDayTasks.map((task) => {
-                const done = completedIds.has(task.id)
+                const done = task.status === 'completed'
                 return (
                   <div
                     key={task.id}
-                    onClick={() => toggleTask(task.id)}
+                    onClick={() => handleToggleTask(task.id, task.userId)}
                     className={cn(
                       'rounded-[10px] p-3 cursor-pointer transition-all duration-200 hover:bg-bg-elevated',
                       done
@@ -495,6 +544,9 @@ export default function Study() {
                           )}>
                             {task.title}
                           </span>
+                          {task.userId !== 'mock' && (
+                            <span className="text-[9px] text-info">📖词</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full', PRIORITY_BG[task.priority])}>
