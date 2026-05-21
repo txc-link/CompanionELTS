@@ -117,8 +117,8 @@ export async function translateWithYoudao(
     const salt = String(Date.now())
     const curtime = Math.floor(Date.now() / 1000)
 
-    // input: 前10个字符+文本长度+后10个字符（最多50字符）
-    const input = text.length <= 10 ? text : text.slice(0, 10) + text.length + text.slice(-10)
+    // input: v3 签名 - q长度≤20时直接用q，>20时截取前后各10个字符
+    const input = text.length <= 20 ? text : text.slice(0, 10) + text.length + text.slice(-10)
     const signStr = appKey + input + salt + curtime + appSecret
     const sign = sha256(signStr)
 

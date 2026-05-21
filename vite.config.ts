@@ -33,7 +33,7 @@ export default defineConfig({
       },
       // 讯飞机器翻译
       '/api/xf': {
-        target: 'https://itrans.xf-yun.com',
+        target: 'https://itrans.xfyun.cn',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/xf/, ''),
         secure: true,

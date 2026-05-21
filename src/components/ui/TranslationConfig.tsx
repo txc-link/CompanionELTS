@@ -3,6 +3,10 @@ import { getGoogleApiKey, setGoogleApiKey, translateWithGoogle } from '@/lib/tra
 import { getBaiduApiKey, setBaiduApiKey, getBaiduSecretKey, setBaiduSecretKey, isBaiduConfigured, translateWithBaidu } from '@/lib/baiduTranslate'
 import { getYoudaoAppKey, setYoudaoAppKey, getYoudaoAppSecret, setYoudaoAppSecret, isYoudaoConfigured, translateWithYoudao } from '@/lib/youdaoTranslate'
 import { getXfApiKey, setXfApiKey, getXfApiSecret, setXfApiSecret, isXfConfigured, translateWithXf } from '@/lib/xfTranslate'
+
+const XF_APP_ID_KEY = 'xftranslate_app_id'
+function getXfAppId(): string { try { return localStorage.getItem(XF_APP_ID_KEY) || '' } catch { return '' } }
+function setXfAppId(id: string) { try { localStorage.setItem(XF_APP_ID_KEY, id) } catch {} }
 import { cn } from '@/utils/cn'
 
 interface TranslationConfigProps {
@@ -146,6 +150,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
   const [youdaoAppSecret, setYoudaoAppSecretState] = useState('')
   const [xfApiKey, setXfApiKeyState] = useState('')
   const [xfApiSecret, setXfApiSecretState] = useState('')
+  const [xfAppId, setXfAppIdState] = useState('')
 
   // UI state
   const [enabled, setEnabled] = useState<Record<ServiceKey, boolean>>(ENABLED_DEFAULT)
@@ -164,6 +169,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setYoudaoAppSecretState(getYoudaoAppSecret())
       setXfApiKeyState(getXfApiKey())
       setXfApiSecretState(getXfApiSecret())
+      setXfAppIdState(getXfAppId())
       setEnabled(getEnabledServices())
     } catch { /* localStorage access failed */ }
   }, [])
@@ -195,7 +201,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       if (key === 'google') setGoogleApiKey(googleApiKey.trim())
       if (key === 'baidu') { setBaiduApiKey(baiduApiKey.trim()); setBaiduSecretKey(baiduSecretKey.trim()) }
       if (key === 'youdao') { setYoudaoAppKey(youdaoAppKey.trim()); setYoudaoAppSecret(youdaoAppSecret.trim()) }
-      if (key === 'xf') { setXfApiKey(xfApiKey.trim()); setXfApiSecret(xfApiSecret.trim()) }
+      if (key === 'xf') { setXfApiKey(xfApiKey.trim()); setXfApiSecret(xfApiSecret.trim()); setXfAppId(xfAppId.trim()) }
       setTestResult({ key, success: true, message: '凭证已保存' })
     } catch {
       setTestResult({ key, success: false, message: '保存失败' })
@@ -203,7 +209,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setSavingKey(null)
       setTimeout(() => setTestResult(null), 3000)
     }
-  }, [googleApiKey, baiduApiKey, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret])
+  }, [googleApiKey, baiduApiKey, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret, xfAppId])
 
   const handleTest = useCallback(async (key: ServiceKey) => {
     setTestKey(key)
@@ -213,7 +219,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       if (key === 'google') result = await translateWithGoogle('hello world', 'zh-CN')
       else if (key === 'baidu') result = await translateWithBaidu('hello world', 'en', 'zh')
       else if (key === 'youdao') result = await translateWithYoudao('hello world', 'auto', 'zh-CHS')
-      else if (key === 'xf') result = await translateWithXf('hello world', 'en', 'zh')
+      else if (key === 'xf') result = await translateWithXf('hello world', 'en', 'zh', xfAppId)
       setTestResult({
         key,
         success: !!result,
@@ -383,7 +389,16 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
               {/* Xunfei credentials */}
               {meta.key === 'xf' && (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-app-id`} className="text-xs font-medium text-text-secondary">APPID</label>
+                      <input
+                        id={`${meta.key}-app-id`} type="text" value={xfAppId}
+                        onChange={(e) => setXfAppIdState(e.target.value)}
+                        placeholder="讯飞 APPID"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
                     <div className="flex flex-col gap-1">
                       <label htmlFor={`${meta.key}-api-key`} className="text-xs font-medium text-text-secondary">API Key</label>
                       <input
