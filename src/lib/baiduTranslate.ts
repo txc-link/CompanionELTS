@@ -8,8 +8,8 @@ const BD_API_KEY_KEY = 'baidu_translate_api_key'
 const BD_SECRET_KEY = 'baidu_translate_secret_key'
 const BD_TOKEN_KEY = 'baidu_translate_access_token'
 const BD_TOKEN_EXPIRY_KEY = 'baidu_translate_token_expiry'
-const BD_TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token'
-const BD_TRANS_URL = 'https://aip.baidubce.com/rpc/2.0/mt/trans/v1'
+const BD_TOKEN_URL = '/api/baidu/oauth/2.0/token'
+const BD_TRANS_URL = '/api/baidu/rpc/2.0/mt/texttrans/v1'
 
 // ─── LocalStorage helpers ─────────────────────────────────────────────────
 export function getBaiduApiKey(): string {
@@ -101,12 +101,10 @@ export async function translateWithBaidu(
     }
 
     console.log('[Baidu Translate] trans_url:', BD_TRANS_URL)
-    const res = await fetch(BD_TRANS_URL, {
+    const res = await fetch(`${BD_TRANS_URL}?access_token=${token}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json;charset=utf-8',
       },
       body: JSON.stringify({
         q: text,
@@ -116,29 +114,26 @@ export async function translateWithBaidu(
     })
 
     if (!res.ok) {
-      // 401 → token 过期，重新获取
-      if (res.status === 401) {
-        localStorage.removeItem(BD_TOKEN_KEY)
-        localStorage.removeItem(BD_TOKEN_EXPIRY_KEY)
-        const newToken = await getAccessToken()
-        if (!newToken) return null
-        return translateWithBaidu(text, from, to) // retry once
-      }
-      return null
+      // token 过期，重新获取
+      localStorage.removeItem(BD_TOKEN_KEY)
+      localStorage.removeItem(BD_TOKEN_EXPIRY_KEY)
+      const newToken = await getAccessToken()
+      if (!newToken) return null
+      return translateWithBaidu(text, from, to)
     }
 
     const data = await res.json()
 
     // 错误: { "error_code": "...", "error_msg": "..." }
     if (data.error_code !== undefined) {
-      console.warn('[Baidu Translate] error:', data.error_code, data.error_msg, 'body:', JSON.stringify(data).substring(0, 200))
+      console.warn('[Baidu Translate] error:', data.error_code, data.error_msg)
       return null
     }
 
-    // 成功: { "result": { "trans_list": [{ "dst": "..." }] } }
-    const transList = data?.result?.trans_list
-    if (transList && transList.length > 0) {
-      return transList.map((r: { dst: string }) => r.dst).join('\n')
+    // 成功: { "result": { "trans_result": [{ "src":"...", "dst":"..." }] } }
+    const transResult = data?.result?.trans_result
+    if (transResult && transResult.length > 0) {
+      return transResult.map((r: { dst: string }) => r.dst).join('\n')
     }
     return null
   } catch {

@@ -5,7 +5,7 @@
 
 const XF_API_KEY_KEY = 'xftranslate_api_key'
 const XF_API_SECRET_KEY = 'xftranslate_api_secret'
-const XF_API_URL = 'https://itrans.xf-yun.com/v1/its'
+const XF_API_URL = '/api/xf/v1/its'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 

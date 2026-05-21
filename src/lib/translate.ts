@@ -24,7 +24,7 @@ export async function translateWithGoogle(
   if (!apiKey) return null
 
   try {
-    const url = `https://translation.googleapis.com/language/translate/v2`
+    const url = '/api/google/language/translate/v2'
     const res = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',

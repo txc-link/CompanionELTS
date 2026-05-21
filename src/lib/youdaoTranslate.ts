@@ -5,7 +5,7 @@
 
 const YD_APP_KEY_KEY = 'youdao_translate_app_key'
 const YD_APP_SECRET_KEY = 'youdao_translate_app_secret'
-const YD_API_URL = 'https://openapi.youdao.com/api'
+const YD_API_URL = '/api/youdao/api'
 
 // ─── Pure-JS SHA256 (RFC 4634) ───────────────────────────────────────────
 function sha256(str: string): string {
