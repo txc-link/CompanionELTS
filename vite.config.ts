@@ -2,9 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import crypto from 'crypto'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), xfyunMtProxy()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') }
   },
@@ -32,13 +33,6 @@ export default defineConfig({
         rewrite: (p) => p.replace(/^\/api\/youdao/, ''),
         secure: true,
       },
-      // 讯飞机器翻译 API v2
-      '/api/xf': {
-        target: 'https://itrans.xfyun.cn',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/xf/, ''),
-        secure: true,
-      },
     },
   },
   test: {
@@ -47,3 +41,71 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
   }
 })
+
+/**
+ * 讯飞机器翻译（v2）本地代理：
+ * - 浏览器无法设置 Date/Host/Digest/Authorization（forbidden headers）
+ * - 在 Vite dev server 中生成鉴权头后转发到 https://itrans.xfyun.cn/v2/its
+ * - 浏览器通过自定义 header 传入 apiKey/apiSecret：x-xf-api-key / x-xf-api-secret
+ */
+function xfyunMtProxy() {
+  const HOST = 'itrans.xfyun.cn'
+  const UPSTREAM_URL = `https://${HOST}/v2/its`
+  const HDR_KEY = 'x-xf-api-key'
+  const HDR_SECRET = 'x-xf-api-secret'
+
+  return {
+    name: 'xfyun-mt-proxy',
+    configureServer(server: any) {
+      server.middlewares.use('/api/xf/v2/its', (req: any, res: any, next: any) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') return next()
+
+        const apiKey = req.headers[HDR_KEY] as string | undefined
+        const apiSecret = req.headers[HDR_SECRET] as string | undefined
+        if (!apiKey || !apiSecret) {
+          res.statusCode = 400
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ message: `Missing ${HDR_KEY}/${HDR_SECRET}` }))
+          return
+        }
+
+        let body = ''
+        req.on('data', (chunk: any) => { body += chunk })
+        req.on('end', async () => {
+          try {
+            const date = new Date().toUTCString()
+            const digest = 'SHA-256=' + crypto.createHash('sha256').update(body, 'utf8').digest('base64')
+            const signOrigin = `host: ${HOST}\ndate: ${date}\nPOST /v2/its HTTP/1.1\ndigest: ${digest}`
+            const signature = crypto.createHmac('sha256', apiSecret).update(signOrigin).digest('base64')
+            const authorization = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line digest", signature="${signature}"`
+
+            const upstream = await fetch(UPSTREAM_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Date': date,
+                'Digest': digest,
+                'Authorization': authorization,
+              },
+              body,
+            })
+
+            const text = await upstream.text()
+            res.statusCode = upstream.status
+            res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/json; charset=utf-8')
+            res.end(text)
+          } catch (e: any) {
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json; charset=utf-8')
+            res.end(JSON.stringify({ message: 'xf proxy error', error: String(e?.message || e) }))
+          }
+        })
+      })
+    },
+  }
+}
