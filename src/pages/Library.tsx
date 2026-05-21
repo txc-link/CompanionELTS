@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { cn } from '@/utils/cn'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { lookupWord, buildVocabWord, type VocabWord } from '@/lib/dictionary'
+import { translateWithGoogle, getGoogleApiKey } from '@/lib/translate'
 
 // ─── Types ───────────────────────────────────────────────────────────────
 interface Book {
@@ -37,47 +39,12 @@ interface Note {
   createdAt: string
 }
 
-interface VocabWord {
-  id: string
-  word: string
-  phonetic: string
-  pos: string
-  meaning: string
-  example: string
-  savedAt: string
-  sourceBook?: string
-}
-
 interface SelectedTextState {
   text: string
   x: number
   y: number
   visible: boolean
   paragraphIdx: number
-}
-
-// ─── Dictionary ──────────────────────────────────────────────────────────
-const DICTIONARY: Record<string, { phonetic: string; pos: string; meaning: string; example: string }> = {
-  artificial: { phonetic: '/ˌɑːrtɪˈfɪʃl/', pos: 'adj.', meaning: '人造的；虚假的；矫揉造作的', example: 'The artificial intelligence system can process millions of data points per second.' },
-  intelligence: { phonetic: '/ɪnˈtelɪdʒəns/', pos: 'n.', meaning: '智力；情报；智能', example: 'Her intelligence and dedication made her an invaluable member of the team.' },
-  employment: { phonetic: '/ɪmˈplɔɪmənt/', pos: 'n.', meaning: '就业；雇用；职业', example: 'The government introduced new policies to boost employment rates.' },
-  unprecedented: { phonetic: '/ʌnˈpresɪdentɪd/', pos: 'adj.', meaning: '空前的；史无前例的', example: 'The pandemic caused unprecedented disruption.' },
-  profound: { phonetic: '/prəˈfaʊnd/', pos: 'adj.', meaning: '深刻的；意义深远的', example: 'The discovery had a profound impact.' },
-  innovation: { phonetic: '/ˌɪnəˈveɪʃn/', pos: 'n.', meaning: '创新；革新；新事物', example: 'Innovation is key to staying competitive.' },
-  resilience: { phonetic: '/rɪˈzɪliəns/', pos: 'n.', meaning: '韧性；恢复力；弹力', example: 'The community showed remarkable resilience.' },
-  autonomy: { phonetic: '/ɔːˈtɑːnəmi/', pos: 'n.', meaning: '自主权；自治；自主', example: 'Employees value autonomy in their work.' },
-  significant: { phonetic: '/sɪɡˈnɪfɪkənt/', pos: 'adj.', meaning: '显著的；重要的；有意义的', example: 'There was a significant increase in enrollment.' },
-  contemporary: { phonetic: '/kənˈtempəreri/', pos: 'adj.', meaning: '当代的；同时代的', example: 'Contemporary art challenges traditional notions.' },
-}
-
-function lookupWord(word: string) {
-  const clean = word.toLowerCase().replace(/[^a-z]/g, '')
-  if (DICTIONARY[clean]) return DICTIONARY[clean]
-  const keys = Object.keys(DICTIONARY)
-  for (const key of keys) {
-    if (key.startsWith(clean) || clean.startsWith(key) || key.includes(clean)) return DICTIONARY[key]
-  }
-  return null
 }
 
 function formatDate(date: string) {
@@ -218,6 +185,9 @@ function SelectionToolbar({
 function TranslationPopover({ text, onClose, onAddToVocab }: { text: string; onClose: () => void; onAddToVocab: (text: string) => void }) {
   const words = text.trim().split(/\s+/)
   const firstWord = lookupWord(words[0])
+  const [gtResult, setGtResult] = useState<string | null>(null)
+  const [gtLoading, setGtLoading] = useState(false)
+  useEffect(() => { if (getGoogleApiKey()) { setGtLoading(true); translateWithGoogle(text).then(r => { if (r) setGtResult(r); setGtLoading(false) }) } }, [text])
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
@@ -234,6 +204,12 @@ function TranslationPopover({ text, onClose, onAddToVocab }: { text: string; onC
           </div>
         </div>
         <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
+          {gtResult && (
+            <div className="rounded-[10px] bg-accent-blue/8 border border-accent-blue/20 p-3">
+              <p className="text-xs font-semibold text-text-muted mb-1">🌐 Google 翻译</p>
+              <p className="text-sm text-text-primary">{gtResult}</p>
+            </div>
+          )}
           {words.length === 1 && firstWord ? (
             <>
               <div className="rounded-[10px] bg-accent-green/8 border border-accent-green/20 p-3">
@@ -259,6 +235,12 @@ function TranslationPopover({ text, onClose, onAddToVocab }: { text: string; onC
                   )
                 })}
               </div>
+            </div>
+          )}
+          {!gtResult && !firstWord && !gtLoading && !getGoogleApiKey() && (
+            <div className="rounded-[10px] bg-accent-gold/8 border border-accent-gold/20 p-3">
+              <p className="text-xs font-semibold text-text-primary">⚠️ 翻译未配置</p>
+              <p className="text-xs text-text-muted mt-0.5">请在设置中配置 Google 翻译 API Key</p>
             </div>
           )}
         </div>
@@ -388,12 +370,10 @@ export default function Library() {
 
   // ─── Vocab ───────────────────────────────────────────────────────────
   const addToVocab = useCallback((text: string) => {
-    const clean = text.trim().toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/)[0]
-    const info = lookupWord(clean)
-    if (!info) return
+    const newWord = buildVocabWord(text, { sourceBook: activeBook?.title })
     setVocabList((prev) => {
-      if (prev.some((v) => v.word.toLowerCase() === clean)) return prev
-      return [{ id: `v-${Date.now()}`, word: clean, phonetic: info.phonetic, pos: info.pos, meaning: info.meaning, example: info.example, savedAt: new Date().toISOString().slice(0, 10), sourceBook: activeBook?.title }, ...prev]
+      if (prev.some((v) => v.word.toLowerCase() === newWord.word.toLowerCase())) return prev
+      return [newWord, ...prev]
     })
     setVocabSidebarOpen(true)
   }, [activeBook])
