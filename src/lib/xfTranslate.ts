@@ -158,7 +158,8 @@ export async function translateWithXf(
     console.log('[Xunfei] signOrigin:', JSON.stringify(signOrigin))
     console.log('[Xunfei] signature:', signature)
     console.log('[Xunfei] apiKey:', apiKey)
-    console.log('[Xunfei] apiSecret:', apiSecret ? apiSecret.slice(0,5)+'...' : 'EMPTY')
+    console.log('[Xunfei] xfAppId:', appId)
+    console.log('[Xunfei] apiSecret:', apiSecret)
     console.log('[Xunfei] XF_API_URL:', XF_API_URL)
 
     const res = await fetch(XF_API_URL, {
