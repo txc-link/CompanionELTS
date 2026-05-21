@@ -1,12 +1,13 @@
-// ─── 讯飞机器翻译（新）API ─────────────────────────────────────────────
-// 文档: https://www.xfyun.cn/doc/nlp/xftrans_new/API.html
-// 端点: https://itrans.xf-yun.com/v1/its
-// 鉴权: HMAC-SHA256（无 digest），text 明文，body 格式: header + payload.business/data
+// ─── 讯飞机器翻译 API v2 ─────────────────────────────────────────────
+// 文档: https://www.xfyun.cn/doc/nlp/xftrans/API.html
+// 端点: https://itrans.xfyun.cn/v2/its
+// 鉴权: HMAC-SHA256，headers="host date request-line digest"
+// Body: { common, business, data } 三段式
 
 const XF_API_KEY_KEY = 'xftranslate_api_key'
 const XF_API_SECRET_KEY = 'xftranslate_api_secret'
-const XF_API_URL = '/api/xf/v1/its'
-const XF_HOST = 'itrans.xf-yun.com'
+const XF_API_URL = '/api/xf/v2/its'
+const XF_HOST = 'itrans.xfyun.cn'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ function formatRFC1123(d: Date): string {
   return `${days[d.getUTCDay()]}, ${String(d.getUTCDate()).padStart(2, '0')} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')} GMT`
 }
 
+// ─── Pure-JS base64 (no Buffer in browser) ──────────────────────────────
 function btoa(str: string): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
   const bytes = new TextEncoder().encode(str)
@@ -111,7 +113,12 @@ export function setXfApiSecret(key: string) { try { localStorage.setItem(XF_API_
 export function isXfConfigured(): boolean { return !!(getXfApiKey() && getXfApiSecret()) }
 
 /**
- * 讯飞机器翻译（新）API
+ * 讯飞机器翻译 API v2
+ * 文档: https://www.xfyun.cn/doc/nlp/xftrans/API.html
+ * 端点: https://itrans.xfyun.cn/v2/its
+ * 鉴权: HMAC-SHA256, headers="host date request-line digest"
+ * Body: { common: { app_id }, business: { from, to }, data: { text: base64 } }
+ * 注意: text 需要 base64 编码，且 base64 编码后大小不超过 1024 bytes
  */
 export async function translateWithXf(
   text: string,
@@ -125,37 +132,59 @@ export async function translateWithXf(
     const apiKey = getXfApiKey()
     const apiSecret = getXfApiSecret()
 
-    const signOrigin = `host: ${XF_HOST}\ndate: ${dateStr}\nPOST /v1/its HTTP/1.1`
-    const signature = hmacSha256(apiSecret, signOrigin)
-    const authOrigin = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`
-    const auth = btoa(authOrigin)
-
+    // Body: v2 格式，text 必须 base64 编码
+    const textB64 = btoa(text)
     const body = JSON.stringify({
-      header: { app_id: appId },
-      parameter: { its: { from, to } },
-      payload: { input_data: { text } },
+      common: { app_id: appId },
+      business: { from, to },
+      data: { text: textB64 },
     })
 
-    const url = `${XF_API_URL}?authorization=${encodeURIComponent(auth)}&host=${encodeURIComponent(XF_HOST)}&date=${encodeURIComponent(dateStr)}`
+    // Digest: SHA-256(body) 并 base64
+    const bodyBytes = new TextEncoder().encode(body)
+    const bodyHash = btoaBytes(sha256bytes(bodyBytes))
+    const digest = `SHA-256=${bodyHash}`
 
-    const res = await fetch(url, {
+    // v2 signature origin: host date request-line digest
+    const signOrigin = `host: ${XF_HOST}\ndate: ${dateStr}\nPOST /v2/its HTTP/1.1\ndigest: ${digest}`
+    const signature = hmacSha256(apiSecret, signOrigin)
+
+    // Authorization header
+    const authOrigin = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line digest", signature="${signature}"`
+    const auth = authOrigin
+
+    const res = await fetch(XF_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Host': XF_HOST,
+        'Date': dateStr,
+        'Digest': digest,
+        'Authorization': auth,
+      },
       body,
     })
 
-    if (!res.ok) { console.warn('[Xunfei] HTTP:', res.status); return null }
+    if (!res.ok) {
+      const errText = await res.text()
+      console.warn('[Xunfei] HTTP', res.status, ':', errText)
+      return null
+    }
     const json = await res.json()
 
-    if (json.header?.code !== 0) {
-      console.warn('[Xunfei] error:', json.header?.code, json.header?.message)
+    if (json.code !== 0) {
+      console.warn('[Xunfei] error:', json.code, json.message, 'sid:', json.sid)
+      // 11200 = licc failed (服务未开通/配额耗尽)
+      if (json.code === 11200) {
+        console.warn('[Xunfei] 请在讯飞控制台确认「机器翻译」服务已开通')
+      }
       return null
     }
 
-    // 新版响应: { "header":{"code":0}, "payload":{ "result":{ "text":"..." } } }
-    const result = json?.payload?.result?.text
-    if (result) {
-      try { return decodeURIComponent(atob ? atob(result) : result) } catch { return result }
+    // 响应: { code:0, data: { result: { from, to, trans_result: { src, dst } } } }
+    const transResult = json?.data?.result?.trans_result
+    if (transResult) {
+      return transResult.dst || null
     }
     return null
   } catch (e) {

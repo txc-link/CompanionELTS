@@ -31,9 +31,9 @@ export default defineConfig({
         rewrite: (p) => p.replace(/^\/api\/youdao/, ''),
         secure: true,
       },
-      // 讯飞机器翻译（新）
+      // 讯飞机器翻译 API v2
       '/api/xf': {
-        target: 'https://itrans.xf-yun.com',
+        target: 'https://itrans.xfyun.cn',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/xf/, ''),
         secure: true,

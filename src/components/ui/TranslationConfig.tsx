@@ -178,7 +178,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
     if (key === 'google') return !!googleApiKey
     if (key === 'baidu') return !!(baiduApiKey && baiduSecretKey)
     if (key === 'youdao') return !!(youdaoAppKey && youdaoAppSecret)
-    if (key === 'xf') return !!(xfApiKey && xfApiSecret)
+    if (key === 'xf') return !!(xfAppId && xfApiKey && xfApiSecret)
     return false
   }
 
