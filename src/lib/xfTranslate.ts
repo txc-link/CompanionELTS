@@ -153,6 +153,13 @@ export async function translateWithXf(
     const authOrigin = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line digest", signature="${signature}"`
     const auth = authOrigin
 
+    console.debug('[Xunfei] DEBUG body:', body)
+    console.debug('[Xunfei] DEBUG digest:', digest)
+    console.debug('[Xunfei] DEBUG signOrigin:', JSON.stringify(signOrigin))
+    console.debug('[Xunfei] DEBUG signature:', signature)
+    console.debug('[Xunfei] DEBUG auth:', auth)
+    console.debug('[Xunfei] DEBUG XF_API_URL:', XF_API_URL)
+
     const res = await fetch(XF_API_URL, {
       method: 'POST',
       headers: {
