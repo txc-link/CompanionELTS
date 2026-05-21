@@ -58,13 +58,15 @@ async function getAccessToken(): Promise<string | null> {
       client_id: apiKey,
       client_secret: secretKey,
     })
-    const res = await fetch(`${BD_TOKEN_URL}?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (data.error) {
+    const url = `${BD_TOKEN_URL}?${params.toString()}`
+    console.log('[Baidu OAuth] requesting:', url.replace(apiKey, '***').replace(secretKey, '***'))
+    const res = await fetch(url, { method: 'POST' })
+    const status = res.status
+    const text = await res.text()
+    console.log('[Baidu OAuth] status:', status, 'body:', text)
+    let data: { error?: string; error_description?: string; access_token?: string; expires_in?: number }
+    try { data = JSON.parse(text) } catch { data = {} }
+    if (data.error || status !== 200) {
       console.warn('[Baidu OAuth] error:', data.error, data.error_description)
       return null
     }
@@ -73,7 +75,8 @@ async function getAccessToken(): Promise<string | null> {
       return data.access_token
     }
     return null
-  } catch {
+  } catch (e) {
+    console.error('[Baidu OAuth] fetch error:', e)
     return null
   }
 }
@@ -99,6 +102,7 @@ export async function translateWithBaidu(
       if (!token) return null
     }
 
+    console.log('[Baidu Translate] trans_url:', BD_TRANS_URL)
     const res = await fetch(BD_TRANS_URL, {
       method: 'POST',
       headers: {
@@ -129,7 +133,7 @@ export async function translateWithBaidu(
 
     // 错误: { "error_code": "...", "error_msg": "..." }
     if (data.error_code !== undefined) {
-      console.warn('[Baidu Translate] error:', data.error_code, data.error_msg)
+      console.warn('[Baidu Translate] error:', data.error_code, data.error_msg, 'body:', JSON.stringify(data).substring(0, 200))
       return null
     }
 
