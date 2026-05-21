@@ -420,8 +420,12 @@ export default function Vocab() {
   }, [])
 
   const handleFlashcardNext = () => {
+    // Always advance (even on last card triggers completed state)
     if (flashcardIndex < flashcardWords.length - 1) {
       setFlashcardIndex((i) => i + 1)
+    } else {
+      // On last card, force index beyond bounds to show completion
+      setFlashcardIndex(flashcardWords.length)
     }
   }
 
