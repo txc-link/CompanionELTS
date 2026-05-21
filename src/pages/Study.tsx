@@ -1,148 +1,309 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { cn } from '@/utils/cn'
-import { useStudyStore } from '@/store/studyStore'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Card, CardTitle } from '@/components/ui/Card'
-import type { StudyTask } from '@/types/study'
 
-// ─── Mock Calendar Data ───────────────────────────────────────────────────────
-const today = new Date()
-const year = today.getFullYear()
-const month = today.getMonth()
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function pad(n: number) { return String(n).padStart(2, '0') }
+function toDateStr(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function toMonthStr(year: number, month: number) {
+  return `${year}-${pad(month + 1)}`
+}
 
-function getCalendarDays(year: number, month: number): Array<{
-  date: Date
-  dayNumber: number
-  isToday: boolean
-  isCurrentMonth: boolean
-  intensity: number
-  hasSession: boolean
-  completed: boolean
-}> {
+const WEEK_DAYS_ZH = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+const MONTH_NAMES_ZH = [
+  '一月', '二月', '三月', '四月', '五月', '六月',
+  '七月', '八月', '九月', '十月', '十一月', '十二月',
+]
+
+// ─── Full Month Mock Data for May 2026 ─────────────────────────────────────
+// 31 days, realistic IELTS study plan
+const MAY_TASKS = [
+  // 5/1 周四
+  { id: 'm-1-1', date: '2026-05-01', title: '阅读 Passage 1 精读', category: 'reading' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-1-2', date: '2026-05-01', title: '听力 Section 1 入门练习', category: 'listening' as const, priority: 'low' as const, status: 'completed' as const },
+  { id: 'm-1-3', date: '2026-05-01', title: '词汇 List 1-2 新词学习', category: 'vocabulary' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/2 周五
+  { id: 'm-2-1', date: '2026-05-02', title: '写作 Task 1 柱状图练习', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-2-2', date: '2026-05-02', title: '听力 Section 2 场景对话', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-2-3', date: '2026-05-02', title: '词汇 List 3-4 复习', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/3 周六
+  { id: 'm-3-1', date: '2026-05-03', title: '阅读 Passage 2 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-3-2', date: '2026-05-03', title: '口语 Part 1 日常话题 5 题', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-3-3', date: '2026-05-03', title: '语法：时态综合复习', category: 'grammar' as const, priority: 'low' as const, status: 'completed' as const },
+  // 5/4 周日
+  { id: 'm-4-1', date: '2026-05-04', title: '本周错题复盘整理', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-4-2', date: '2026-05-04', title: '口语 Part 2 独立陈述 2 题', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/5 周一
+  { id: 'm-5-1', date: '2026-05-05', title: '阅读 Passage 3 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-5-2', date: '2026-05-05', title: '听力 Section 3 学术讨论', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-5-3', date: '2026-05-05', title: '词汇 List 5-6 新词学习', category: 'vocabulary' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/6 周二
+  { id: 'm-6-1', date: '2026-05-06', title: '写作 Task 2 教育话题一篇', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-6-2', date: '2026-05-06', title: '听力 Section 4 学术讲座', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/7 周三
+  { id: 'm-7-1', date: '2026-05-07', title: '阅读 Passage 4 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-7-2', date: '2026-05-07', title: '口语 Part 3 深度讨论 3 题', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-7-3', date: '2026-05-07', title: '词汇 List 7-8 复习', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/8 周四
+  { id: 'm-8-1', date: '2026-05-08', title: '阅读 Passage 5 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-8-2', date: '2026-05-08', title: '听力完整一套 Test 1', category: 'listening' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/9 周五
+  { id: 'm-9-1', date: '2026-05-09', title: '写作 Task 1 表格题练习', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-9-2', date: '2026-05-09', title: '词汇 List 9-10 新词学习', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/10 周六
+  { id: 'm-10-1', date: '2026-05-10', title: '口语 Part 1 常见话题复习', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-10-2', date: '2026-05-10', title: '第二周错题整理', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/11 周日
+  { id: 'm-11-1', date: '2026-05-11', title: '阅读 Passage 6 精读', category: 'reading' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-11-2', date: '2026-05-11', title: '全科模拟测试一套', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/12 周一
+  { id: 'm-12-1', date: '2026-05-12', title: '阅读 Passage 7 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-12-2', date: '2026-05-12', title: '听力 Section 2 旅游场景', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/13 周二
+  { id: 'm-13-1', date: '2026-05-13', title: '写作 Task 2 科技话题一篇', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-13-2', date: '2026-05-13', title: '词汇 List 11-12 新词', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/14 周三
+  { id: 'm-14-1', date: '2026-05-14', title: '阅读 Passage 8 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-14-2', date: '2026-05-14', title: '口语 Part 2 事件描述题 3 题', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/15 周四
+  { id: 'm-15-1', date: '2026-05-15', title: '听力完整一套 Test 2', category: 'listening' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-15-2', date: '2026-05-15', title: '语法：从句综合练习', category: 'grammar' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/16 周五
+  { id: 'm-16-1', date: '2026-05-16', title: '写作 Task 1 流程图练习', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-16-2', date: '2026-05-16', title: '词汇 List 13-14 复习', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/17 周六
+  { id: 'm-17-1', date: '2026-05-17', title: '阅读 Passage 9 精读', category: 'reading' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-17-2', date: '2026-05-17', title: '口语 Part 3 社会话题讨论', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/18 周日
+  { id: 'm-18-1', date: '2026-05-18', title: '第三周错题复盘', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-18-2', date: '2026-05-18', title: '全科模拟测试第二套', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/19 周一
+  { id: 'm-19-1', date: '2026-05-19', title: '阅读 Passage 10 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-19-2', date: '2026-05-19', title: '听力 Section 1 租房场景', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-19-3', date: '2026-05-19', title: '写作 Task 2 环境话题一篇', category: 'writing' as const, priority: 'high' as const, status: 'completed' as const },
+  // 5/20 周二
+  { id: 'm-20-1', date: '2026-05-20', title: '阅读 Passage 11 精读', category: 'reading' as const, priority: 'high' as const, status: 'completed' as const },
+  { id: 'm-20-2', date: '2026-05-20', title: '听力 Section 3 导师辅导', category: 'listening' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-20-3', date: '2026-05-20', title: '词汇 List 15-16 新词', category: 'vocabulary' as const, priority: 'medium' as const, status: 'completed' as const },
+  { id: 'm-20-4', date: '2026-05-20', title: '口语 Part 1 工作学习话题', category: 'speaking' as const, priority: 'medium' as const, status: 'completed' as const },
+  // 5/21 周三 (今天)
+  { id: 'm-21-1', date: '2026-05-21', title: '阅读 Passage 12 精读', category: 'reading' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-21-2', date: '2026-05-21', title: '听力 Section 4 环保讲座', category: 'listening' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-21-3', date: '2026-05-21', title: '写作 Task 1 饼图练习', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-21-4', date: '2026-05-21', title: '语法：虚拟语气复习', category: 'grammar' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/22 周四
+  { id: 'm-22-1', date: '2026-05-22', title: '阅读 Passage 13 精读', category: 'reading' as const, priority: 'medium' as const, status: 'pending' as const },
+  { id: 'm-22-2', date: '2026-05-22', title: '听力完整一套 Test 3', category: 'listening' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-22-3', date: '2026-05-22', title: '写作 Task 2 媒体话题一篇', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+  // 5/23 周五
+  { id: 'm-23-1', date: '2026-05-23', title: '口语 Part 2 人物描述题 3 题', category: 'speaking' as const, priority: 'medium' as const, status: 'pending' as const },
+  { id: 'm-23-2', date: '2026-05-23', title: '词汇 List 17-18 新词', category: 'vocabulary' as const, priority: 'medium' as const, status: 'pending' as const },
+  { id: 'm-23-3', date: '2026-05-23', title: '全科模拟测试第三套', category: 'reading' as const, priority: 'high' as const, status: 'pending' as const },
+  // 5/24 周六
+  { id: 'm-24-1', date: '2026-05-24', title: '第四周错题全面复盘', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-24-2', date: '2026-05-24', title: '口语 Part 3 文化话题讨论', category: 'speaking' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/25 周日
+  { id: 'm-25-1', date: '2026-05-25', title: '阅读 Passage 14 精读', category: 'reading' as const, priority: 'medium' as const, status: 'pending' as const },
+  { id: 'm-25-2', date: '2026-05-25', title: '词汇 List 19-20 复习冲刺', category: 'vocabulary' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/26 周一
+  { id: 'm-26-1', date: '2026-05-26', title: '写作 Task 2 政府话题一篇', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-26-2', date: '2026-05-26', title: '听力 Section 1 银行场景', category: 'listening' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/27 周二
+  { id: 'm-27-1', date: '2026-05-27', title: '阅读 Passage 15 精读', category: 'reading' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-27-2', date: '2026-05-27', title: '口语 Part 2 地点描述题 2 题', category: 'speaking' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/28 周三
+  { id: 'm-28-1', date: '2026-05-28', title: '听力完整一套 Test 4', category: 'listening' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-28-2', date: '2026-05-28', title: '语法：倒装句练习', category: 'grammar' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/29 周四
+  { id: 'm-29-1', date: '2026-05-29', title: '写作 Task 1 综合题型练习', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-29-2', date: '2026-05-29', title: '词汇 List 21-22 总复习', category: 'vocabulary' as const, priority: 'medium' as const, status: 'pending' as const },
+  // 5/30 周五
+  { id: 'm-30-1', date: '2026-05-30', title: '阅读 Passage 16 考前冲刺', category: 'reading' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-30-2', date: '2026-05-30', title: '口语 Part 1+2+3 模拟一套', category: 'speaking' as const, priority: 'high' as const, status: 'pending' as const },
+  // 5/31 周六
+  { id: 'm-31-1', date: '2026-05-31', title: '全科模拟测试最终套', category: 'reading' as const, priority: 'high' as const, status: 'pending' as const },
+  { id: 'm-31-2', date: '2026-05-31', title: '本月错题总复盘', category: 'writing' as const, priority: 'high' as const, status: 'pending' as const },
+]
+
+// ─── Category Config ───────────────────────────────────────────────────────
+const CAT_ICONS: Record<string, string> = {
+  reading: '📖', listening: '🎧', writing: '✍️',
+  speaking: '🎤', vocabulary: '📚', grammar: '🧠',
+}
+const CAT_COLORS: Record<string, string> = {
+  reading: 'text-info', listening: 'text-accent-green',
+  writing: 'text-accent-gold', speaking: 'text-accent-amber',
+  vocabulary: 'text-accent-green', grammar: 'text-info',
+}
+const PRIORITY_LABEL: Record<string, string> = { high: '高', medium: '中', low: '低' }
+const PRIORITY_BG: Record<string, string> = {
+  high: 'bg-danger/15 text-danger',
+  medium: 'bg-accent-gold/15 text-accent-gold',
+  low: 'bg-bg-elevated text-text-muted',
+}
+
+// ─── Calendar builder ─────────────────────────────────────────────────────
+function buildCalendarDays(year: number, month: number, selectedDate: string) {
+  const today = new Date()
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   const startPad = firstDay.getDay()
+
   const days: Array<{
-    date: Date
+    dateStr: string
     dayNumber: number
     isToday: boolean
     isCurrentMonth: boolean
-    intensity: number
-    hasSession: boolean
-    completed: boolean
+    isSelected: boolean
+    taskCount: number
+    completedCount: number
+    tasks: typeof MAY_TASKS
   }> = []
 
-  // Pad with previous month days
+  // Prev month padding
   for (let i = startPad - 1; i >= 0; i--) {
     const d = new Date(year, month, -i)
     days.push({
-      date: d,
-      dayNumber: d.getDate(),
-      isToday: false,
-      isCurrentMonth: false,
-      intensity: 0,
-      hasSession: false,
-      completed: false,
+      dateStr: toDateStr(d), dayNumber: d.getDate(),
+      isToday: false, isCurrentMonth: false, isSelected: false,
+      taskCount: 0, completedCount: 0, tasks: [],
     })
   }
 
-  // Current month days
+  // Current month
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const d = new Date(year, month, i)
+    const dateStr = toDateStr(d)
+    const tasks = MAY_TASKS.filter((t) => t.date === dateStr)
     const isToday =
       d.getDate() === today.getDate() &&
       d.getMonth() === today.getMonth() &&
       d.getFullYear() === today.getFullYear()
-    const intensity = Math.floor(Math.random() * 4)
     days.push({
-      date: d,
-      dayNumber: i,
-      isToday,
-      isCurrentMonth: true,
-      intensity,
-      hasSession: intensity > 0,
-      completed: intensity >= 3,
+      dateStr, dayNumber: i,
+      isToday, isCurrentMonth: true, isSelected: selectedDate === dateStr,
+      taskCount: tasks.length,
+      completedCount: tasks.filter((t) => t.status === 'completed').length,
+      tasks,
     })
   }
 
-  // Pad with next month days to fill 6 rows
+  // Next month padding to fill 6 rows (42 cells)
   const remaining = 42 - days.length
   for (let i = 1; i <= remaining; i++) {
     const d = new Date(year, month + 1, i)
     days.push({
-      date: d,
-      dayNumber: i,
-      isToday: false,
-      isCurrentMonth: false,
-      intensity: 0,
-      hasSession: false,
-      completed: false,
+      dateStr: toDateStr(d), dayNumber: i,
+      isToday: false, isCurrentMonth: false, isSelected: false,
+      taskCount: 0, completedCount: 0, tasks: [],
     })
   }
 
   return days
 }
 
-const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
-const PRIORITY_COLORS = {
-  high: 'border-l-danger bg-danger/5',
-  medium: 'border-l-accent-gold bg-accent-gold/5',
-  low: 'border-l-border-accent bg-bg-elevated/50',
-}
-
-const CATEGORY_ICONS: Record<StudyTask['category'], string> = {
-  reading: '\uD83D\uDCD6',
-  listening: '\uD83C\uDFA7',
-  writing: '\u270D\uFE0F',
-  speaking: '\uD83C\uDFA4',
-  vocabulary: '\uD83D\uDCDA',
-  grammar: '\uD83E\uDDE0',
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────────
 export default function Study() {
-  const [currentYear, setCurrentYear] = useState(year)
-  const [currentMonth, setCurrentMonth] = useState(month)
+  const today = new Date()
+  const thisYear = today.getFullYear()
+  const thisMonth = today.getMonth() // 0-indexed
+
+  const [currentYear, setCurrentYear] = useState(thisYear)
+  const [currentMonth, setCurrentMonth] = useState(thisMonth)
+  const [selectedDate, setSelectedDate] = useState<string>(toDateStr(today))
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [newTaskCategory, setNewTaskCategory] = useState<StudyTask['category']>('reading')
-  const [newTaskPriority, setNewTaskPriority] = useState<StudyTask['priority']>('medium')
-  const [selectedDate, setSelectedDate] = useState<string>(today.toISOString().slice(0, 10))
+  const [newTaskCategory, setNewTaskCategory] = useState<string>('reading')
+  const [newTaskPriority, setNewTaskPriority] = useState<string>('medium')
+  const [completedIds, setCompletedIds] = useState<Set<string>>(
+    new Set(MAY_TASKS.filter((t) => t.status === 'completed').map((t) => t.id))
+  )
 
-  const { tasks, toggleTaskStatus } = useStudyStore()
+  const calendarDays = buildCalendarDays(currentYear, currentMonth, selectedDate)
 
-  const calendarDays = getCalendarDays(currentYear, currentMonth)
+  // Selected day's tasks
+  const selectedDayTasks = useMemo(
+    () => MAY_TASKS.filter((t) => t.date === selectedDate),
+    [selectedDate]
+  )
+  const dayPending = selectedDayTasks.filter((t) => !completedIds.has(t.id))
+  const dayCompleted = selectedDayTasks.filter((t) => completedIds.has(t.id))
 
-  const completedTasks = tasks.filter((t) => t.status === 'completed')
-  const pendingTasks = tasks.filter((t) => t.status !== 'completed')
-  const todayStr = today.toISOString().split('T')[0]
-  const todayCompleted = completedTasks.filter(
-    (t) => t.completedAt?.startsWith(todayStr)
-  ).length
+  // Week stats: current week's completed/pending
+  const weekStart = useMemo(() => {
+    const d = new Date(selectedDate)
+    const day = d.getDay()
+    const monday = new Date(d)
+    monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+    return monday
+  }, [selectedDate])
+
+  const weekTasks = useMemo(() => {
+    const end = new Date(weekStart)
+    end.setDate(weekStart.getDate() + 6)
+    return MAY_TASKS.filter((t) => {
+      const d = new Date(t.date)
+      return d >= weekStart && d <= end
+    })
+  }, [weekStart])
+
+  const weekStats = useMemo(() => {
+    const completed = weekTasks.filter((t) => completedIds.has(t.id)).length
+    const total = weekTasks.length
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+    return { completed, total, pct }
+  }, [weekTasks, completedIds])
+
+  // Week plan: Mon-Fri for current week
+  const weekPlan = useMemo(() => {
+    const days = []
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(weekStart)
+      d.setDate(weekStart.getDate() + i)
+      const dateStr = toDateStr(d)
+      const tasks = MAY_TASKS.filter((t) => t.date === dateStr)
+      const mainTask = tasks[0]
+      days.push({
+        dateStr,
+        dayLabel: WEEK_DAYS_ZH[d.getDay()],
+        task: mainTask ? mainTask.title : null,
+        icon: mainTask ? CAT_ICONS[mainTask.category] : '📋',
+        done: mainTask ? completedIds.has(mainTask.id) : false,
+      })
+    }
+    return days
+  }, [weekStart, completedIds])
 
   function prevMonth() {
     if (currentMonth === 0) {
       setCurrentMonth(11)
-      setCurrentYear(currentYear - 1)
+      setCurrentYear((y) => y - 1)
     } else {
-      setCurrentMonth(currentMonth - 1)
+      setCurrentMonth((m) => m - 1)
     }
   }
 
   function nextMonth() {
     if (currentMonth === 11) {
       setCurrentMonth(0)
-      setCurrentYear(currentYear + 1)
+      setCurrentYear((y) => y + 1)
     } else {
-      setCurrentMonth(currentMonth + 1)
+      setCurrentMonth((m) => m + 1)
     }
+  }
+
+  function toggleTask(id: string) {
+    setCompletedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   return (
@@ -150,12 +311,8 @@ export default function Study() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">
-            {'\uD83E\uDDE0'} AI 学习规划
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            智能排课表 · 助力高分破局
-          </p>
+          <h1 className="text-2xl font-bold text-text-primary">🧠 AI 学习规划</h1>
+          <p className="text-sm text-text-muted mt-1">智能排课表 · 助力高分破局</p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)}>
           + 添加任务
@@ -163,26 +320,21 @@ export default function Study() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Calendar */}
+        {/* Left: Calendar + Stats */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Calendar */}
           <Card>
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={prevMonth}
-                className="p-1.5 rounded-[8px] hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors"
-              >
+              <button onClick={prevMonth} className="p-1.5 rounded-[8px] hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors cursor-pointer">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               <h2 className="text-base font-bold text-text-primary">
-                {MONTH_NAMES[currentMonth]} {currentYear}
+                {MONTH_NAMES_ZH[currentMonth]} {currentYear}
               </h2>
-              <button
-                onClick={nextMonth}
-                className="p-1.5 rounded-[8px] hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors"
-              >
+              <button onClick={nextMonth} className="p-1.5 rounded-[8px] hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors cursor-pointer">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -191,29 +343,22 @@ export default function Study() {
 
             {/* Weekday Headers */}
             <div className="grid grid-cols-7 gap-1 mb-1">
-              {WEEK_DAYS.map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-[11px] font-semibold text-text-muted py-1"
-                >
-                  {day}
-                </div>
+              {WEEK_DAYS_ZH.map((d) => (
+                <div key={d} className="text-center text-[11px] font-semibold text-text-muted py-1">{d}</div>
               ))}
             </div>
 
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, idx) => {
-                const isSelected = selectedDate === day.date.toISOString().slice(0, 10)
-                return (
+              {calendarDays.map((day, idx) => (
                 <div
                   key={idx}
-                  onClick={() => day.isCurrentMonth && setSelectedDate(day.date.toISOString().slice(0, 10))}
+                  onClick={() => day.isCurrentMonth && setSelectedDate(day.dateStr)}
                   className={cn(
                     'relative flex flex-col items-center justify-start pt-1.5 pb-1 rounded-[8px] text-xs',
                     'min-h-[52px] transition-all duration-200',
                     day.isCurrentMonth
-                      ? isSelected
+                      ? day.isSelected
                         ? 'bg-accent-green text-bg-primary cursor-pointer shadow-[0_2px_8px_rgba(110,197,110,0.2)]'
                         : day.isToday
                         ? 'bg-accent-green/10 border border-accent-green/40 cursor-pointer hover:bg-accent-green/15'
@@ -221,38 +366,31 @@ export default function Study() {
                       : 'opacity-30 pointer-events-none',
                   )}
                 >
-                  <span
-                    className={cn(
-                      'font-semibold text-[13px] leading-none mb-1',
-                      day.isToday ? 'text-accent-green' : 'text-text-secondary'
-                    )}
-                  >
+                  <span className={cn(
+                    'font-semibold text-[13px] leading-none mb-0.5',
+                    day.isToday && !day.isSelected ? 'text-accent-green' : '',
+                  )}>
                     {day.dayNumber}
                   </span>
-
-                  {/* Session dot indicator */}
-                  {day.hasSession && (
+                  {/* Task dots */}
+                  {day.taskCount > 0 && (
                     <div className="flex gap-0.5 mt-0.5">
-                      {Array.from({ length: day.intensity }).map((_, i) => (
+                      {Array.from({ length: Math.min(day.taskCount, 3) }, (_, i) => (
                         <div
                           key={i}
                           className={cn(
                             'w-1.5 h-1.5 rounded-full',
-                            day.completed
-                              ? 'bg-accent-green'
-                              : 'bg-accent-gold'
+                            i < day.completedCount ? 'bg-accent-green' : 'bg-accent-gold'
                           )}
                         />
                       ))}
                     </div>
                   )}
-
-                  {/* Today label */}
-                  {day.isToday && (
-                    <span className="text-[9px] text-accent-green font-medium mt-0.5">TODAY</span>
+                  {day.isToday && !day.isSelected && (
+                    <span className="text-[9px] text-accent-green font-medium mt-0.5">今天</span>
                   )}
                 </div>
-              )})}
+              ))}
             </div>
 
             {/* Legend */}
@@ -276,104 +414,81 @@ export default function Study() {
           <Card>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: '\u4ECA\u65E5\u5B8C\u6210', value: `${todayCompleted}`, unit: '\u4EF6', color: 'text-accent-green' },
-                { label: '\u672C\u5468\u5B8C\u6210', value: '14', unit: '\u4EF6', color: 'text-accent-gold' },
-                { label: '\u7ED9\u5206\u7387', value: '89%', unit: '', color: 'text-info' },
+                { label: '本周完成', value: weekStats.completed, unit: '项', color: 'text-accent-green' },
+                { label: '本周总任务', value: weekStats.total, unit: '项', color: 'text-accent-gold' },
+                { label: '完成率', value: `${weekStats.pct}%`, unit: '', color: 'text-info' },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
                   <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
                   <p className="text-[11px] text-text-muted">{stat.label}</p>
+                  {stat.unit && <p className="text-[9px] text-text-muted/60">{stat.unit}</p>}
                 </div>
               ))}
             </div>
           </Card>
         </div>
 
-        {/* Right: Task List */}
+        {/* Right: Task List + Week Plan */}
         <div className="space-y-4">
+          {/* Task List */}
           <Card>
-            <CardTitle>\u4EF6\u4E1A\u52A1\u5217\u8868</CardTitle>
+            <CardTitle>
+              {selectedDate} 任务列表
+              <span className="ml-auto text-text-muted font-normal normal-case tracking-normal text-xs">
+                {dayCompleted.length}/{selectedDayTasks.length}
+              </span>
+            </CardTitle>
 
-            {pendingTasks.length === 0 && (
+            {selectedDayTasks.length === 0 && (
               <div className="text-center py-6">
-                <p className="text-sm text-text-muted">\u6CA1\u6709\u5F85\u5B8C\u6210\u4EFB\u52A1</p>
-                <Button variant="secondary" size="sm" className="mt-2" onClick={() => setAddModalOpen(true)}>
-                  \u6DFB\u52A0\u4E00\u4E2A
+                <span className="text-3xl">🎉</span>
+                <p className="text-sm text-text-muted mt-2">这一天没有安排任务</p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={() => setAddModalOpen(true)}>
+                  去添加
                 </Button>
               </div>
             )}
 
-            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-              {pendingTasks.map((task) => (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {dayPending.map((task) => (
                 <div
                   key={task.id}
+                  onClick={() => toggleTask(task.id)}
                   className={cn(
-                    'rounded-[10px] border-l-2 p-3 cursor-pointer transition-all duration-200',
-                    'hover:bg-bg-elevated group',
-                    PRIORITY_COLORS[task.priority]
+                    'rounded-[10px] p-3 cursor-pointer transition-all duration-200 hover:bg-bg-elevated',
+                    'border-l-2 border-l-border-subtle'
                   )}
-                  onClick={() => toggleTaskStatus(task.id)}
                 >
                   <div className="flex items-start gap-2">
-                    {/* Checkbox */}
-                    <div
-                      className={cn(
-                        'w-4 h-4 rounded-[4px] border flex-shrink-0 mt-0.5',
-                        'transition-all duration-200',
-                        task.status === 'completed'
-                          ? 'bg-accent-green border-accent-green'
-                          : 'border-border-accent group-hover:border-accent-green/60'
-                      )}
-                    >
-                      {task.status === 'completed' && (
-                        <svg className="w-full h-full text-bg-primary p-0.5" viewBox="0 0 16 16" fill="none">
-                          <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-
+                    <div className="w-4 h-4 rounded-[4px] border border-border-accent flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{CATEGORY_ICONS[task.category]}</span>
-                        <span className={cn(
-                          'text-xs font-medium truncate',
-                          task.status === 'completed'
-                            ? 'text-text-muted line-through'
-                            : 'text-text-primary'
-                        )}>
-                          {task.title}
-                        </span>
+                        <span className="text-sm">{CAT_ICONS[task.category]}</span>
+                        <span className="text-xs text-text-primary">{task.title}</span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={cn(
-                          'text-[10px] px-1.5 py-0.5 rounded-full',
-                          task.priority === 'high' ? 'bg-danger/15 text-danger' :
-                          task.priority === 'medium' ? 'bg-accent-gold/15 text-accent-gold' :
-                          'bg-bg-elevated text-text-muted'
-                        )}>
-                          {task.priority === 'high' ? '\u9AD8' : task.priority === 'medium' ? '\u4E2D' : '\u4F4E'}
-                        </span>
-                        <span className="text-[10px] text-text-muted">{CATEGORY_ICONS[task.category]}</span>
-                      </div>
+                      <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full inline-block mt-1', PRIORITY_BG[task.priority])}>
+                        {PRIORITY_LABEL[task.priority]}
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {completedTasks.length > 0 && (
+            {dayCompleted.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border-subtle">
-                <p className="text-[11px] text-text-muted mb-2">
-                  \u5DF2\u5B8C\u6210 {completedTasks.length} \u4EF6
-                </p>
-                <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
-                  {completedTasks.slice(0, 5).map((task) => (
+                <p className="text-[11px] text-text-muted mb-2">已完成 {dayCompleted.length} 项</p>
+                <div className="space-y-1.5">
+                  {dayCompleted.map((task) => (
                     <div
                       key={task.id}
-                      onClick={() => toggleTaskStatus(task.id)}
+                      onClick={() => toggleTask(task.id)}
                       className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-text-secondary transition-colors line-through"
                     >
-                      <span>{CATEGORY_ICONS[task.category]}</span>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6L5 9L10 3" stroke="#6ec56e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>{CAT_ICONS[task.category]}</span>
                       <span className="truncate">{task.title}</span>
                     </div>
                   ))}
@@ -382,19 +497,13 @@ export default function Study() {
             )}
           </Card>
 
-          {/* Weekly Plan */}
+          {/* Week Plan */}
           <Card>
-            <CardTitle>\u672C\u5468\u8BA1\u5212</CardTitle>
+            <CardTitle>本周计划</CardTitle>
             <div className="space-y-2.5">
-              {[
-                { day: '\u5468\u4E00', task: '\u542C\u529B\u771F\u9898 1\u5957', done: true, icon: '\uD83C\uDFA7' },
-                { day: '\u5468\u4E8C', task: '\u5199\u4F5C Task2 \u4E00\u7BC7', done: true, icon: '\u270D\uFE0F' },
-                { day: '\u5468\u4E09', task: '\u9605\u8BFB\u7C7B\u578B\u7EC3\u4E60', done: false, icon: '\uD83D\uDCD6' },
-                { day: '\u5468\u56DB', task: '\u53E3\u8BED Part1 \u7EC3\u4E60', done: false, icon: '\uD83C\uDFA4' },
-                { day: '\u5468\u4E94', task: '\u8BCD\u6C47\u590D\u4E60', done: false, icon: '\uD83D\uDCDA' },
-              ].map((item) => (
+              {weekPlan.map((item) => (
                 <div
-                  key={item.day}
+                  key={item.dateStr}
                   className={cn(
                     'flex items-center gap-3 rounded-[8px] p-2.5 transition-all duration-200',
                     item.done ? 'bg-accent-green/5' : 'bg-bg-elevated hover:bg-border-subtle'
@@ -402,18 +511,15 @@ export default function Study() {
                 >
                   <span className="text-base flex-shrink-0">{item.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      'text-xs font-medium',
-                      item.done ? 'text-text-muted line-through' : 'text-text-primary'
-                    )}>
-                      {item.task}
+                    <p className={cn('text-xs font-medium', item.done ? 'text-text-muted line-through' : 'text-text-primary')}>
+                      {item.task || '无任务'}
                     </p>
-                    <p className="text-[10px] text-text-muted">{item.day}</p>
+                    <p className="text-[10px] text-text-muted">{item.dayLabel}</p>
                   </div>
                   {item.done && (
                     <div className="w-4 h-4 rounded-full bg-accent-green flex items-center justify-center flex-shrink-0">
-                      <svg className="w-2.5 h-2.5 text-bg-primary" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                        <path d="M1.5 4L3 5.5L6.5 2" stroke="#0f1a12" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
                   )}
@@ -425,26 +531,18 @@ export default function Study() {
       </div>
 
       {/* Add Task Modal */}
-      <Modal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        title="\u6DFB\u52A0\u4EFB\u52A1"
-        size="sm"
-      >
+      <Modal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} title="添加任务" size="sm">
         <div className="space-y-4">
           <Input
-            label="\u4EFB\u52A1\u540D\u79F0"
+            label="任务名称"
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="\u4E3A\u4EFB\u52A1\u8D4B\u4E00\u4E2A\u540D\u79F0\u2026"
+            placeholder="为任务赋予一个名称…"
           />
-
           <div>
-            <label className="text-xs font-medium text-text-secondary mb-2 block">
-              \u4EFB\u52A1\u7C7B\u578B
-            </label>
+            <label className="text-xs font-medium text-text-secondary mb-2 block">任务类型</label>
             <div className="flex flex-wrap gap-2">
-              {(['reading', 'listening', 'writing', 'speaking', 'vocabulary'] as const).map((cat) => (
+              {Object.entries(CAT_ICONS).map(([cat, icon]) => (
                 <button
                   key={cat}
                   onClick={() => setNewTaskCategory(cat)}
@@ -455,16 +553,13 @@ export default function Study() {
                       : 'bg-bg-elevated text-text-secondary border border-border-subtle hover:border-accent-green/50'
                   )}
                 >
-                  {CATEGORY_ICONS[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  {icon} {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
               ))}
             </div>
           </div>
-
           <div>
-            <label className="text-xs font-medium text-text-secondary mb-2 block">
-              \u4EFB\u52A1\u4F18\u5148\u7EA7
-            </label>
+            <label className="text-xs font-medium text-text-secondary mb-2 block">任务优先级</label>
             <div className="flex gap-2">
               {(['high', 'medium', 'low'] as const).map((p) => (
                 <button
@@ -479,24 +574,18 @@ export default function Study() {
                       : 'bg-bg-elevated text-text-secondary border border-border-subtle'
                   )}
                 >
-                  {p === 'high' ? '\u9AD8' : p === 'medium' ? '\u4E2D' : '\u4F4E'}
+                  {PRIORITY_LABEL[p]}
                 </button>
               ))}
             </div>
           </div>
-
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" size="sm" onClick={() => setAddModalOpen(false)}>
-              \u53D6\u6D88
-            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setAddModalOpen(false)}>取消</Button>
             <Button variant="primary" size="sm" onClick={() => {
               if (!newTaskTitle.trim()) return
-              // In real app, this would use addTask from store
               setAddModalOpen(false)
               setNewTaskTitle('')
-            }}>
-              \u786E\u8BA4\u6DFB\u52A0
-            </Button>
+            }}>确认添加</Button>
           </div>
         </div>
       </Modal>
