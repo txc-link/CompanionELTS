@@ -18,6 +18,7 @@ const navGroups = [
     label: '技能训练',
     items: [
       { to: '/reading', label: '阅读', icon: 'reading' },
+      { to: '/library', label: '图书馆', icon: 'library' },
       { to: '/listening', label: '听力', icon: 'listening' },
       { to: '/writing', label: '写作', icon: 'writing' },
       { to: '/speaking', label: '口语', icon: 'speaking' },
@@ -87,6 +88,13 @@ const iconMap: Record<string, React.ReactNode> = {
       <rect x="2.25" y="10.5" width="3" height="3.75" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
       <rect x="12.75" y="10.5" width="3" height="3.75" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
       <path d="M9 13.5V15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  library: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2.25" y="3" width="3.75" height="12" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="7.5" y="1.5" width="3.75" height="13.5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="12.75" y="4.5" width="3.75" height="10.5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
   ),
   writing: (

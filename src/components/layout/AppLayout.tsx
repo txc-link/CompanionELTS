@@ -27,6 +27,7 @@ import Vocab from '@/pages/Vocab'
 import Leaderboard from '@/pages/Leaderboard'
 import DailyMessages from '@/pages/DailyMessages'
 import Square from '@/pages/Square'
+import Library from '@/pages/Library'
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -112,6 +113,7 @@ export default function AppLayout() {
             <Route path="/study" element={<Study />} />
             <Route path="/timer" element={<FocusTimer />} />
             <Route path="/reading" element={<Reading />} />
+            <Route path="/library" element={<Library />} />
             <Route path="/listening" element={<Listening />} />
             <Route path="/writing" element={<Writing />} />
             <Route path="/speaking" element={<Speaking />} />
