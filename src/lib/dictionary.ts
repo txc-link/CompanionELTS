@@ -1,6 +1,31 @@
 // ─── 共享词典 + 单词本工具 ──────────────────────────────────────────────
 // 供 Reading.tsx / Library.tsx 复用
 
+// ─── SM-2 评分等级 ──────────────────────────────────────────────────────
+export type SRSRating = 0 | 1 | 2 | 3 | 4 | 5
+// 0 完全错误  1 错误但回忆后记住  2 错误但容易回忆  3 正确但困难  4 正确稍有犹豫  5 完全正确
+// 简化为三档：again(0-1) hard(2-3) good(4-5)
+export type SimpleRating = 'again' | 'hard' | 'good' | 'easy'
+
+// ─── SRS 数据结构（基于 SM-2 算法）────────────────────────────────────
+export interface SRSData {
+  /** 复习间隔（天），初始 0 */
+  interval: number
+  /** 连续正确次数，初始 0 */
+  repetition: number
+  /** 难度因子（≥1.3），初始 2.5 */
+  efactor: number
+  /** 单词状态 */
+  state: 'new' | 'learning' | 'review' | 'relearning'
+  /** 下次复习日期（ISO字符串） */
+  dueDate: string
+  /** 上次复习时间 */
+  lastReviewed: string
+  /** 遗忘次数（评分<3的次数） */
+  lapseCount: number
+}
+
+// ─── 单词本单词 ────────────────────────────────────────────────────────
 export interface VocabWord {
   id: string
   word: string
@@ -11,6 +36,8 @@ export interface VocabWord {
   savedAt: string
   sourceBook?: string
   sourceParagraph?: string
+  /** SM-2 复习数据 */
+  srs: SRSData
 }
 
 // ─── 内置词典（雅思高频学术词汇）────────────────────────────────────────
@@ -57,19 +84,105 @@ export function buildVocabWord(
 ): VocabWord {
   const clean = text.trim().toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/)[0]
   const info = lookupWord(clean)
+  const today = new Date().toISOString().slice(0, 10)
   return {
-    id: `v-${Date.now()}`,
+    id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     word: text.trim().substring(0, 50),
     phonetic: info?.phonetic || '',
     pos: info?.pos || '',
     meaning: info?.meaning || '',
     example: info?.example || '',
-    savedAt: new Date().toISOString().slice(0, 10),
+    savedAt: today,
     sourceBook: extra?.sourceBook,
     sourceParagraph: extra?.sourceParagraph,
+    srs: {
+      interval: 0,
+      repetition: 0,
+      efactor: 2.5,
+      state: 'new',
+      dueDate: today, // 新词当天即可复习
+      lastReviewed: '',
+      lapseCount: 0,
+    },
   }
 }
 
-const ADJECTIVES_POS = ['adj.', 'adv.']
-const NOUNS_POS = ['n.', 'pron.']
-const VERBS_POS = ['v.', 'aux.']
+// ─── SM-2 算法核心 ─────────────────────────────────────────────────────
+// 参考 jamezmca/spaced-repetition-in-javascript + VienDinhCom/supermemo
+export function ratingToGrade(rating: SimpleRating): SRSRating {
+  if (rating === 'again') return 0
+  if (rating === 'hard') return 3
+  if (rating === 'good') return 4
+  return 5 // easy
+}
+
+export function calculateSM2(
+  current: SRSData,
+  rating: SimpleRating
+): SRSData {
+  const grade = ratingToGrade(rating)
+  let { interval, repetition, efactor } = current
+
+  if (grade >= 3) {
+    // 更新 efactor（SM-2 公式）
+    efactor = Math.max(1.3, efactor + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02)))
+
+    // 计算间隔
+    if (repetition === 0) {
+      interval = 1
+    } else if (repetition === 1) {
+      interval = 6
+    } else {
+      interval = Math.round(interval * efactor)
+    }
+    repetition += 1
+
+    // 计算下一个复习日期
+    const next = new Date()
+    next.setDate(next.getDate() + interval)
+    const dueDate = next.toISOString().slice(0, 10)
+
+    const newState: SRSData['state'] =
+      repetition >= 3 ? 'review' : 'learning'
+
+    return {
+      interval,
+      repetition,
+      efactor,
+      state: newState,
+      dueDate,
+      lastReviewed: new Date().toISOString().slice(0, 10),
+      lapseCount: current.lapseCount,
+    }
+  } else {
+    // 错误响应：重置间隔，状态变为 relearning
+    efactor = Math.max(1.3, efactor - 0.2)
+    const next = new Date()
+    next.setDate(next.getDate() + 1) // 明天再复习
+    return {
+      interval: 1,
+      repetition: 0,
+      efactor,
+      state: 'relearning',
+      dueDate: next.toISOString().slice(0, 10),
+      lastReviewed: new Date().toISOString().slice(0, 10),
+      lapseCount: current.lapseCount + 1,
+    }
+  }
+}
+
+// ─── 按到期日过滤待复习单词 ──────────────────────────────────────────────
+export function getDueWords(words: VocabWord[]): VocabWord[] {
+  const today = new Date().toISOString().slice(0, 10)
+  return words.filter((w) => w.srs.dueDate <= today)
+}
+
+// ─── 按状态分组 ─────────────────────────────────────────────────────────
+export function groupByState(words: VocabWord[]) {
+  return {
+    new: words.filter((w) => w.srs.state === 'new'),
+    learning: words.filter((w) => w.srs.state === 'learning'),
+    review: words.filter((w) => w.srs.state === 'review'),
+    relearning: words.filter((w) => w.srs.state === 'relearning'),
+  }
+}

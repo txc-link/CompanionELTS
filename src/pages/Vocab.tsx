@@ -1,154 +1,156 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { cn } from '@/utils/cn'
-import { Card, CardTitle } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { useVocabTaskStore, vocabWordToTask } from '@/store'
-import type { VocabWord } from '@/lib/dictionary'
+import { useVocabTaskStore } from '@/store'
+import type { SimpleRating } from '@/lib/dictionary'
+import { IELTS_LEXICON, getChapterList, type LexiconWord } from '@/data/ieltsLexicon'
 
 // ─── Types ───────────────────────────────────────────────────────────────
-type MasteryLevel = 'new' | 'learning' | 'review' | 'mastered'
-type StudyMode = 'browse' | 'flashcard' | 'quiz'
+type ViewMode = 'chapters' | 'chapter' | 'flashcard' | 'practice'
+type StudyMode = 'browse' | 'flashcard' | 'practice'
 
-interface Word {
-  id: string
-  word: string
-  phonetic: string
-  pos: string
-  meaning: string
-  example: string
-  translation: string
-  mastery: number
-  level: MasteryLevel
-  lastReview: string
-  nextReview: string
-  easeFactor: number
-  wrongCount: number
-}
-
-// ─── Mock Data ───────────────────────────────────────────────────────────
-const INITIAL_WORDS: Word[] = [
-  { id: 'w1', word: 'ubiquitous', phonetic: '/juːˈbɪkwɪtəs/', pos: 'adj.', meaning: '无处不在的，普遍存在的', example: 'Smartphones have become ubiquitous in modern society.', translation: '智能手机在现代社会中已变得无处不在。', mastery: 0.9, level: 'mastered', lastReview: '2026-05-18', nextReview: '2026-05-28', easeFactor: 2.8, wrongCount: 0 },
-  { id: 'w2', word: 'mitigate', phonetic: '/ˈmɪtɪɡeɪt/', pos: 'v.', meaning: '减轻，缓和，使降低', example: 'Planting trees can help mitigate the effects of climate change.', translation: '植树可以帮助减轻气候变化的影响。', mastery: 0.7, level: 'review', lastReview: '2026-05-19', nextReview: '2026-05-22', easeFactor: 2.5, wrongCount: 1 },
-  { id: 'w3', word: 'disparity', phonetic: '/dɪˈspærəti/', pos: 'n.', meaning: '差异，不一致，差距', example: 'There is a growing disparity between the rich and the poor.', translation: '富人与穷人之间的差距越来越大。', mastery: 0.4, level: 'learning', lastReview: '2026-05-15', nextReview: '2026-05-21', easeFactor: 2.3, wrongCount: 3 },
-  { id: 'w4', word: 'scrutinize', phonetic: '/ˈskruːtənaɪz/', pos: 'v.', meaning: '仔细检查，细致审查', example: 'The data was scrutinized for errors before publication.', translation: '数据在发表前经过仔细检查以确保无误。', mastery: 0.15, level: 'new', lastReview: '从未复习', nextReview: '立即复习', easeFactor: 2.1, wrongCount: 5 },
-  { id: 'w5', word: 'proliferation', phonetic: '/prəˌlɪfəˈreɪʃn/', pos: 'n.', meaning: '扩散，增殖，激增', example: 'The proliferation of social media has changed communication patterns.', translation: '社交媒体的普及改变了沟通模式。', mastery: 0.85, level: 'mastered', lastReview: '2026-05-20', nextReview: '2026-06-01', easeFactor: 3.0, wrongCount: 0 },
-  { id: 'w6', word: 'ameliorate', phonetic: '/əˈmiːliəreɪt/', pos: 'v.', meaning: '改善，改进，使变好', example: 'New policies were introduced to ameliorate living conditions.', translation: '新政策被引入以改善生活条件。', mastery: 0.1, level: 'new', lastReview: '从未复习', nextReview: '立即复习', easeFactor: 2.0, wrongCount: 4 },
-  { id: 'w7', word: 'empirical', phonetic: '/ɪmˈpɪrɪkl/', pos: 'adj.', meaning: '以经验为依据的，实证的', example: 'The study is based on empirical research conducted over five years.', translation: '该研究基于五年间进行的实证研究。', mastery: 0.35, level: 'learning', lastReview: '2026-05-13', nextReview: '2026-05-21', easeFactor: 2.2, wrongCount: 4 },
-  { id: 'w8', word: 'phenomenon', phonetic: '/fɪˈnɒmɪnən/', pos: 'n.', meaning: '现象，杰出的人/事', example: 'The phenomenon of climate change affects everyone on Earth.', translation: '气候变化这一现象影响着地球上的每一个人。', mastery: 0.75, level: 'review', lastReview: '2026-05-16', nextReview: '2026-05-24', easeFactor: 2.6, wrongCount: 1 },
-  { id: 'w9', word: 'substantiate', phonetic: '/səbˈstænʃieɪt/', pos: 'v.', meaning: '证实，使具体化', example: 'The scientist could not substantiate her claims without more data.', translation: '没有更多数据，这位科学家无法证实她的主张。', mastery: 0.2, level: 'new', lastReview: '从未复习', nextReview: '立即复习', easeFactor: 2.0, wrongCount: 6 },
-  { id: 'w10', word: 'comprehensive', phonetic: '/ˌkɒmprɪˈhensɪv/', pos: 'adj.', meaning: '全面的，综合的，详尽的', example: 'The report provides a comprehensive analysis of market trends.', translation: '该报告对市场趋势提供了全面的分析。', mastery: 0.55, level: 'learning', lastReview: '2026-05-14', nextReview: '2026-05-22', easeFactor: 2.4, wrongCount: 2 },
-  { id: 'w11', word: 'articulate', phonetic: '/ɑːˈtɪkjuleɪt/', pos: 'v.', meaning: '清晰地表达，发音', example: 'She was able to articulate her vision clearly to the team.', translation: '她能够清晰地团队表达她的愿景。', mastery: 0.8, level: 'mastered', lastReview: '2026-05-19', nextReview: '2026-06-02', easeFactor: 2.9, wrongCount: 0 },
-  { id: 'w12', word: 'deliberate', phonetic: '/dɪˈlɪbərət/', pos: 'adj.', meaning: '故意的，深思熟虑的，从容的', example: 'It was a deliberate decision to delay the project.', translation: '推迟项目是一个经过深思熟虑的决定。', mastery: 0.3, level: 'learning', lastReview: '2026-05-12', nextReview: '2026-05-21', easeFactor: 2.1, wrongCount: 3 },
-]
-
-// ─── Level Config ──────────────────────────────────────────────────────────
-const LEVEL_CONFIG: Record<MasteryLevel, { label: string; color: string; bg: string; dot: string }> = {
+// SRS 状态 → UI 标签映射
+const SRS_STATE_CONFIG = {
   new: { label: '新词', color: 'text-danger', bg: 'bg-danger/15', dot: 'bg-danger' },
   learning: { label: '学习中', color: 'text-accent-gold', bg: 'bg-accent-gold/15', dot: 'bg-accent-gold' },
   review: { label: '待复习', color: 'text-info', bg: 'bg-info/15', dot: 'bg-info' },
-  mastered: { label: '已掌握', color: 'text-accent-green', bg: 'bg-accent-green/15', dot: 'bg-accent-green' },
+  relearning: { label: '重学', color: 'text-danger', bg: 'bg-danger/15', dot: 'bg-danger' },
+} as const
+
+type SRSState = keyof typeof SRS_STATE_CONFIG
+
+// 词性标签
+const POS_LABELS: Record<string, string> = {
+  'adj.': '形', 'v.': '动', 'n.': '名', 'adv.': '副',
+  'n./v.': '名/动', 'adj./n.': '形/名', 'v./n.': '动/名',
+  'adj./v.': '形/动', 'n./adj.': '名/形', 'adv./n.': '副/名',
 }
 
-const POS_LABELS: Record<string, string> = {
-  'adj.': '形容词', 'v.': '动词', 'n.': '名词', 'adv.': '副词',
+// ─── Flatten lexicon to all words ────────────────────────────────────────
+function flattenChapter(chapterId: string): Array<{ word: LexiconWord; chapterId: string; groupIndex: number }> {
+  const chapter = IELTS_LEXICON[chapterId]
+  if (!chapter) return []
+  const result: Array<{ word: LexiconWord; chapterId: string; groupIndex: number }> = []
+  chapter.groups.forEach((group, gi) => {
+    group.forEach((word) => {
+      result.push({ word, chapterId, groupIndex: gi })
+    })
+  })
+  return result
+}
+
+export function flattenAllWords() {
+  const result: Array<{ word: LexiconWord; chapterId: string; groupIndex: number }> = []
+  Object.keys(IELTS_LEXICON).forEach((cid) => {
+    result.push(...flattenChapter(cid))
+  })
+  return result
 }
 
 // ─── Flashcard Component ─────────────────────────────────────────────────
-function Flashcard({
+function FlashcardCard({
   word,
+  chapterId,
   onRate,
   onNext,
-  isLast,
-  total,
   index,
+  total,
 }: {
-  word: Word
-  onRate: (id: string, rating: 'again' | 'hard' | 'good' | 'easy') => void
+  word: LexiconWord
+  chapterId: string
+  onRate: (r: SimpleRating) => void
   onNext: () => void
-  isLast: boolean
-  total: number
   index: number
+  total: number
 }) {
   const [flipped, setFlipped] = useState(false)
+  const [showHint, setShowHint] = useState(false)
 
-  // Reset flip when word changes
-  useEffect(() => { setFlipped(false) }, [word.id])
+  useEffect(() => { setFlipped(false); setShowHint(false) }, [word])
+
+  const chapter = IELTS_LEXICON[chapterId]
 
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-lg mx-auto">
       {/* Progress */}
       <div className="flex items-center gap-3 w-full">
         <div className="flex-1 h-1.5 rounded-full bg-border-subtle overflow-hidden">
-          <div
-            className="h-full bg-accent-green rounded-full transition-all duration-500"
-            style={{ width: `${(index / total) * 100}%` }}
-          />
+          <div className="h-full bg-accent-green rounded-full transition-all duration-500" style={{ width: `${(index / total) * 100}%` }} />
         </div>
         <span className="text-xs text-text-muted whitespace-nowrap">{index + 1}/{total}</span>
       </div>
+
+      {/* Audio button */}
+      <button
+        onClick={() => {
+          const audio = new Audio(`/vocabulary/audio/${chapterId}/${word.word[0]}.mp3`)
+          audio.play().catch(() => {})
+        }}
+        className="text-xs text-text-muted hover:text-accent-green flex items-center gap-1 cursor-pointer"
+      >
+        🔊 听发音
+      </button>
 
       {/* Card */}
       <div
         onClick={() => setFlipped(!flipped)}
         className={cn(
-          'relative w-full min-h-[200px] rounded-[20px] border cursor-pointer transition-all duration-500',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] select-none',
-          flipped
-            ? 'bg-accent-green/10 border-accent-green/40'
-            : 'bg-bg-card border-border-subtle'
+          'relative w-full min-h-[220px] rounded-[20px] border cursor-pointer transition-all duration-500 select-none',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]',
+          flipped ? 'bg-accent-green/10 border-accent-green/40' : 'bg-bg-card border-border-subtle'
         )}
       >
         {/* Front */}
         <div className={cn(
-          'p-8 flex flex-col items-center justify-center min-h-[200px] transition-all duration-500',
+          'p-8 flex flex-col items-center justify-center min-h-[220px] transition-all duration-500',
           flipped ? 'opacity-0' : 'opacity-100'
         )}>
-          <Badge variant="default" size="sm" className="mb-4">{POS_LABELS[word.pos] || word.pos}</Badge>
-          <h2 className="text-3xl font-bold text-text-primary mb-2 text-center">{word.word}</h2>
-          <p className="text-sm text-text-muted italic mb-4">{word.phonetic}</p>
-          <div className={cn('text-sm font-semibold', LEVEL_CONFIG[word.level].color)}>
-            {LEVEL_CONFIG[word.level].label}
-          </div>
-          <p className="text-xs text-text-muted mt-6">点击卡片查看中文释义</p>
+          <Badge variant="default" size="sm" className="mb-4">
+            {POS_LABELS[word.pos] || word.pos}
+          </Badge>
+          <h2 className="text-3xl font-bold text-text-primary mb-3 text-center">{word.word[0]}</h2>
+          {word.word.length > 1 && (
+            <div className="flex gap-2 mb-3">
+              {word.word.slice(1).map((w, i) => (
+                <span key={i} className="text-sm text-text-muted">/ {w}</span>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-text-muted italic mt-2">点击卡片查看中文释义</p>
         </div>
 
         {/* Back */}
         <div className={cn(
-          'absolute inset-0 p-8 flex flex-col items-center justify-center min-h-[200px] transition-all duration-500',
+          'absolute inset-0 p-8 flex flex-col items-center justify-center min-h-[220px] transition-all duration-500',
           flipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}>
           <h3 className="text-xl font-bold text-text-primary mb-3 text-center">{word.meaning}</h3>
           <div className="w-full border-t border-border-subtle my-3" />
-          <p className="text-sm text-text-secondary italic text-center leading-relaxed mb-2">
-            "{word.example}"
-          </p>
-          <p className="text-xs text-text-muted text-center">{word.translation}</p>
+          {word.example && word.example !== '-' && (
+            <p className="text-sm text-text-secondary italic text-center leading-relaxed mb-2">"{word.example}"</p>
+          )}
+          {word.extra && word.extra !== '-' && (
+            <p className="text-xs text-info mt-1 text-center">📝 {word.extra}</p>
+          )}
           <p className="text-xs text-text-muted mt-4">点击卡片返回</p>
         </div>
       </div>
 
-      {/* Rating Buttons - only show after flip */}
+      {/* Rating Buttons */}
       {flipped ? (
         <div className="flex gap-3 w-full max-w-md">
           {([
-            { key: 'again' as const, label: '不认识', color: 'bg-danger/20 text-danger border border-danger/30', icon: '🔴', desc: '稍后再复习' },
-            { key: 'hard' as const, label: '模糊', color: 'bg-accent-gold/20 text-accent-gold border border-accent-gold/30', icon: '🟡', desc: '降低间隔' },
-            { key: 'good' as const, label: '认识', color: 'bg-accent-green/20 text-accent-green border border-accent-green/30', icon: '🟢', desc: '正常复习' },
-            { key: 'easy' as const, label: '太简单', color: 'bg-info/20 text-info border border-info/30', icon: '🔵', desc: '延长间隔' },
+            { key: 'again' as const, label: '不认识', color: 'bg-danger/20 text-danger border border-danger/30', icon: '🔴', desc: '1 天后再复习' },
+            { key: 'hard' as const, label: '模糊', color: 'bg-accent-gold/20 text-accent-gold border border-accent-gold/30', icon: '🟡', desc: '间隔略短' },
+            { key: 'good' as const, label: '认识', color: 'bg-accent-green/20 text-accent-green border border-accent-green/30', icon: '🟢', desc: '正常间隔' },
           ] as const).map((btn) => (
             <button
               key={btn.key}
-              onClick={() => {
-                onRate(word.id, btn.key)
-                onNext()
-              }}
-              className={cn(
-                'flex-1 flex flex-col items-center gap-0.5 py-3 rounded-[12px] border transition-all duration-200 cursor-pointer',
-                'hover:brightness-110 active:scale-95',
-                btn.color
-              )}
+              onClick={() => { onRate(btn.key); onNext() }}
+              className={cn('flex-1 flex flex-col items-center gap-0.5 py-3 rounded-[12px] border transition-all duration-200 cursor-pointer hover:brightness-110 active:scale-95', btn.color)}
             >
               <span className="text-lg">{btn.icon}</span>
               <span className="text-xs font-semibold">{btn.label}</span>
@@ -157,630 +159,527 @@ function Flashcard({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-text-muted text-center">点击卡片翻转查看释义，然后选择记忆程度</p>
+        <p className="text-xs text-text-muted text-center">点击卡片翻转，然后选择记忆程度</p>
       )}
     </div>
   )
 }
 
-// ─── Quiz Question ───────────────────────────────────────────────────────
-function QuizQuestion({
-  word,
-  onAnswer,
-  questionIndex,
-  total,
-  onNext,
-  isLast,
-}: {
-  word: Word
-  onAnswer: (correct: boolean) => void
-  questionIndex: number
-  total: number
-  onNext: () => void
-  isLast: boolean
-}) {
-  const [selected, setSelected] = useState<string | null>(null)
-  const [showResult, setShowResult] = useState(false)
+// ─── Practice Mode (打字练习) ────────────────────────────────────────────
+function PracticeMode({ chapterId }: { chapterId: string }) {
+  const chapter = IELTS_LEXICON[chapterId]
+  const [inputValues, setInputValues] = useState<Record<number, string>>({})
+  const [showAnswer, setShowAnswer] = useState(false)
+  const [showMeaning, setShowMeaning] = useState(false)
+  const [showSource, setShowSource] = useState(false)
 
-  // Reset when word changes
-  useEffect(() => {
-    setSelected(null)
-    setShowResult(false)
-  }, [word.id])
+  if (!chapter) return null
 
-  const options = useMemo(() => {
-    const correct = word.meaning
-    const pool = INITIAL_WORDS.filter((w) => w.id !== word.id && w.meaning !== correct)
-    const wrong = pool.sort(() => Math.random() - 0.5).slice(0, 3).map((w) => w.meaning)
-    return [...wrong, correct].sort(() => Math.random() - 0.5)
-  }, [word])
+  // Flatten all words with their position index
+  const allWords: Array<{ word: LexiconWord; globalIndex: number; groupLabel: string }> = []
+  let globalIdx = 0
+  chapter.groups.forEach((group, gi) => {
+    const label = `第 ${gi + 1} 组词群`
+    group.forEach((w) => {
+      allWords.push({ word: w, globalIndex: globalIdx++, groupLabel: label })
+    })
+  })
 
-  const handleSelect = (opt: string) => {
-    if (showResult) return
-    setSelected(opt)
-    const correct = opt === word.meaning
-    setShowResult(true)
-    onAnswer(correct)
+  const handleInputChange = (idx: number, value: string) => {
+    setInputValues((prev) => ({ ...prev, [idx]: value }))
   }
 
-  const handleNext = () => {
-    setSelected(null)
-    setShowResult(false)
-    onNext()
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === 'Enter') {
+      // Focus next input
+      const next = document.getElementById(`practice-input-${idx + 1}`)
+      if (next) (next as HTMLInputElement).focus()
+    }
   }
+
+  const getInputClass = (word: LexiconWord, value: string): string => {
+    if (!showAnswer) return 'ml-4 inline-block border border-gray-300 rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white focus:ring-blue-500'
+    const trimmed = value.trim().toLowerCase()
+    const matched = word.word.some((w) => w.toLowerCase().trim() === trimmed)
+    if (!value.trim()) return 'ml-4 inline-block border border-gray-300 rounded-lg bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700'
+    return matched
+      ? 'ml-4 inline-block border border-green-500 rounded-lg bg-green-50 p-2.5 text-sm text-green-900 dark:bg-gray-700 dark:border-green-500 dark:text-green-400'
+      : 'ml-4 inline-block border border-red-500 rounded-lg bg-red-50 p-2.5 text-sm text-red-900 dark:bg-gray-700 dark:border-red-500 dark:text-red-400'
+  }
+
+  const stats = useMemo(() => {
+    let done = 0, correct = 0, error = 0
+    allWords.forEach(({ word }, idx) => {
+      const v = inputValues[idx] || ''
+      if (v.trim()) {
+        done++
+        const trimmed = v.trim().toLowerCase()
+        if (word.word.some((w) => w.toLowerCase().trim() === trimmed)) correct++
+        else error++
+      }
+    })
+    return `${done} 个已做，${correct} 个正确，${error} 个错误`
+  }, [inputValues, allWords])
 
   return (
-    <div className="max-w-lg mx-auto space-y-5">
-      {/* Progress */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-1.5 rounded-full bg-border-subtle overflow-hidden">
-          <div
-            className="h-full bg-accent-green rounded-full transition-all duration-500"
-            style={{ width: `${((questionIndex) / total) * 100}%` }}
-          />
-        </div>
-        <span className="text-xs text-text-muted whitespace-nowrap">{questionIndex}/{total}</span>
+    <div>
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <label className="inline-flex cursor-pointer items-center text-xs">
+          <input type="checkbox" checked={showMeaning} onChange={(e) => setShowMeaning(e.target.checked)} className="mr-1" />
+          <span>释义</span>
+        </label>
+        <label className="inline-flex cursor-pointer items-center text-xs">
+          <input type="checkbox" checked={showSource} onChange={(e) => setShowSource(e.target.checked)} className="mr-1" />
+          <span>原词</span>
+        </label>
+        <label className="inline-flex cursor-pointer items-center text-xs">
+          <input type="checkbox" checked={showAnswer} onChange={(e) => setShowAnswer(e.target.checked)} className="mr-1" />
+          <span>显示答案</span>
+        </label>
       </div>
 
-      {/* Question Card */}
-      <Card>
-        <div className="text-center py-4">
-          <Badge variant="default" size="sm" className="mb-3">{POS_LABELS[word.pos] || word.pos}</Badge>
-          <h2 className="text-3xl font-bold text-text-primary mb-1">{word.word}</h2>
-          <p className="text-sm text-text-muted italic">{word.phonetic}</p>
-        </div>
-        <p className="text-sm text-text-muted text-center mb-4">选择正确的中文释义</p>
+      {/* Chapter audio */}
+      <audio controls className="mb-4">
+        <source src={`/vocabulary/audio/${chapterId}.mp3`} type="audio/mpeg" />
+      </audio>
 
-        <div className="space-y-2">
-          {options.map((opt, i) => {
-            const isSelected = selected === opt
-            const isCorrect = opt === word.meaning
-            let style = 'border-border-subtle hover:border-accent-green/50'
-            let showIcon = false
+      {/* Stats */}
+      <p className="text-xs text-text-muted mb-3">{stats}</p>
 
-            if (showResult) {
-              if (isCorrect) {
-                style = 'border-accent-green/60 bg-accent-green/10 text-accent-green'
-                showIcon = true
-              } else if (isSelected && !isCorrect) {
-                style = 'border-danger/60 bg-danger/10 text-danger'
-                showIcon = true
-              }
-            }
-
-            return (
-              <button
-                key={i}
-                onClick={() => handleSelect(opt)}
-                disabled={showResult}
-                className={cn(
-                  'w-full text-left px-4 py-3 rounded-[10px] border text-sm transition-all duration-200 cursor-pointer',
-                  style,
-                  !showResult && 'hover:bg-bg-elevated'
-                )}
+      {/* Words table */}
+      <div className="overflow-x-auto rounded-lg border border-border-subtle">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th className="p-2 text-left text-xs text-gray-500">#</th>
+              <th className="p-2 text-left text-xs text-gray-500">词</th>
+              <th className="p-2 text-left text-xs text-gray-500">词性</th>
+              <th className="p-2 text-left text-xs text-gray-500">词义</th>
+              <th className="p-2 text-left text-xs text-gray-500">例句</th>
+              <th className="p-2 text-left text-xs text-gray-500">拓展</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800">
+            {allWords.map(({ word, globalIndex, groupLabel }, displayIndex) => (
+              <tr
+                key={globalIndex}
+                className={displayIndex % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''}
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span>{opt}</span>
-                  {showIcon && isCorrect && <span>✅</span>}
-                  {showIcon && isSelected && !isCorrect && <span>❌</span>}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Result feedback */}
-        {showResult && (
-          <div className={cn(
-            'mt-4 p-3 rounded-[10px] text-sm text-center',
-            selected === word.meaning
-              ? 'bg-accent-green/10 text-accent-green'
-              : 'bg-danger/10 text-danger'
-          )}>
-            {selected === word.meaning
-              ? `✅ 正确！${word.word} 的意思是：${word.meaning}`
-              : `❌ 答错了。正确答案是：${word.meaning}`
-            }
-          </div>
-        )}
-
-        {/* Next button */}
-        {showResult && (
-          <div className="mt-4 flex justify-center">
-            <Button variant="primary" size="sm" onClick={handleNext}>
-              {isLast ? '查看结果 →' : '下一题 →'}
-            </Button>
-          </div>
-        )}
-      </Card>
-    </div>
-  )
-}
-
-// ─── Browse Word Card ────────────────────────────────────────────────────
-function BrowseWordCard({
-  word,
-  onLevelChange,
-}: {
-  word: Word
-  onLevelChange: (id: string, level: MasteryLevel) => void
-}) {
-  const [expanded, setExpanded] = useState(false)
-  const lc = LEVEL_CONFIG[word.level]
-
-  return (
-    <div
-      className={cn(
-        'rounded-[14px] border transition-all duration-300 overflow-hidden',
-        expanded ? 'bg-bg-elevated border-accent-green/30' : 'border-border-subtle bg-bg-card hover:border-border-accent'
-      )}
-    >
-      <div onClick={() => setExpanded(!expanded)} className="flex items-center gap-3 p-4 cursor-pointer">
-        <div className={cn('w-2 h-2 rounded-full flex-shrink-0', lc.dot)} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-text-primary">{word.word}</span>
-            <span className="text-xs text-text-muted italic">{word.phonetic}</span>
-            <Badge variant="default" size="sm">{word.pos}</Badge>
-          </div>
-          <p className="text-xs text-text-secondary mt-0.5 truncate">{word.meaning}</p>
-        </div>
-        <div className="flex-shrink-0 flex flex-col items-end gap-1">
-          <div className="w-16 h-1.5 rounded-full bg-border-subtle overflow-hidden">
-            <div className={cn('h-full rounded-full transition-all duration-500', lc.dot)} style={{ width: `${word.mastery * 100}%` }} />
-          </div>
-          <span className="text-[10px] text-text-muted">{Math.round(word.mastery * 100)}%</span>
-        </div>
-        <svg className={cn('w-4 h-4 text-text-muted flex-shrink-0 transition-transform duration-200', expanded && 'rotate-180')} viewBox="0 0 16 16" fill="none">
-          <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-
-      {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border-subtle pt-4">
-          <div>
-            <p className="text-[10px] text-text-muted mb-1 font-semibold">例句</p>
-            <p className="text-sm text-text-primary italic leading-relaxed">"{word.example}"</p>
-            <p className="text-xs text-text-muted mt-1">{word.translation}</p>
-          </div>
-          <div className="flex items-center gap-4 text-[10px] text-text-muted">
-            <span>上次复习：{word.lastReview}</span>
-            <span>下次复习：{word.nextReview}</span>
-            <span>错误：{word.wrongCount}次</span>
-          </div>
-          <div>
-            <p className="text-[10px] text-text-muted mb-2 font-semibold">调整掌握程度</p>
-            <div className="flex gap-2">
-              {(Object.entries(LEVEL_CONFIG) as [MasteryLevel, typeof LEVEL_CONFIG[MasteryLevel]][]).map(([key, cfg]) => (
-                <button
-                  key={key}
-                  onClick={(e) => { e.stopPropagation(); onLevelChange(word.id, key) }}
-                  className={cn(
-                    'px-3 py-1.5 rounded-[8px] text-xs font-medium border transition-all duration-200 cursor-pointer',
-                    word.level === key
-                      ? `${cfg.bg} ${cfg.color} border-current`
-                      : 'bg-bg-elevated text-text-muted border-border-subtle hover:border-border-accent'
+                <td className="p-2 text-xs text-gray-500">{displayIndex + 1}</td>
+                <td className="p-2">
+                  {showSource ? (
+                    <div className="flex items-center gap-1">
+                      {word.word.map((w, wi) => (
+                        <a
+                          key={wi}
+                          href={`https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${w}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs hover:underline text-text-primary font-semibold"
+                        >
+                          {w}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      id={`practice-input-${globalIndex}`}
+                      type="text"
+                      autoComplete="off"
+                      value={inputValues[globalIndex] || ''}
+                      onChange={(e) => handleInputChange(globalIndex, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, globalIndex)}
+                      className={cn('w-24 text-sm', getInputClass(word, inputValues[globalIndex] || ''))}
+                    />
                   )}
-                >
-                  {cfg.label}
-                </button>
-              ))}
-            </div>
-          </div>
+                </td>
+                <td className="p-2 text-xs italic" style={{ fontFamily: 'Times' }}>{word.pos}</td>
+                <td className="p-2 text-xs">{showMeaning ? word.meaning : ''}</td>
+                <td className="p-2 text-xs text-text-muted">{word.example !== '-' ? word.example : ''}</td>
+                <td className="p-2 text-xs text-text-muted">{word.extra !== '-' ? word.extra : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Copy errors button */}
+      {showAnswer && (
+        <div className="mt-4 flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const errors = allWords
+                .filter(({ word, globalIndex }) => {
+                  const v = (inputValues[globalIndex] || '').trim().toLowerCase()
+                  return v && !word.word.some((w) => w.toLowerCase().trim() === v)
+                })
+                .map(({ word }) => `${word.word[0]} ${word.pos} ${word.meaning}`)
+              navigator.clipboard.writeText(errors.join('\n'))
+            }}
+          >
+            📋 拷贝错词
+          </Button>
         </div>
       )}
     </div>
-  )
-}
-
-// ─── Vocab Plan Editor ───────────────────────────────────────────────────
-function VocabPlanEditor() {
-  const { vocabPlan, setPlanTotal, setDailyTarget } = useVocabTaskStore()
-  const [editing, setEditing] = useState(false)
-  const [totalInput, setTotalInput] = useState(String(vocabPlan.totalWords))
-  const [targetInput, setTargetInput] = useState(String(vocabPlan.dailyTarget))
-
-  const progress = Math.min(100, (vocabPlan.wordsLearned / vocabPlan.totalWords) * 100)
-  const remaining = Math.max(0, vocabPlan.totalWords - vocabPlan.wordsLearned)
-
-  const save = () => {
-    const t = parseInt(totalInput) || vocabPlan.totalWords
-    const d = parseInt(targetInput) || vocabPlan.dailyTarget
-    setPlanTotal(t)
-    setDailyTarget(d)
-    setEditing(false)
-  }
-
-  return (
-    <Card className="overflow-hidden">
-      {/* Plan header */}
-      <div className="px-5 pt-5 pb-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🎯</span>
-            <h3 className="text-sm font-bold text-text-primary">词汇学习计划</h3>
-          </div>
-          <button
-            onClick={() => {
-              if (editing) {
-                save()
-              } else {
-                setTotalInput(String(vocabPlan.totalWords))
-                setTargetInput(String(vocabPlan.dailyTarget))
-                setEditing(true)
-              }
-            }}
-            className="text-xs text-accent-green hover:underline cursor-pointer"
-          >
-            {editing ? '保存' : '编辑计划'}
-          </button>
-        </div>
-
-        {editing && (
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-1.5 flex-1">
-              <label className="text-xs text-text-muted whitespace-nowrap">总词汇量</label>
-              <input
-                type="number"
-                value={totalInput}
-                onChange={(e) => setTotalInput(e.target.value)}
-                className="w-20 px-2 py-1 rounded-[6px] bg-bg-elevated border border-border-subtle text-xs text-text-primary text-center"
-                min={1}
-              />
-              <span className="text-xs text-text-muted">词</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-1">
-              <label className="text-xs text-text-muted whitespace-nowrap">每日目标</label>
-              <input
-                type="number"
-                value={targetInput}
-                onChange={(e) => setTargetInput(e.target.value)}
-                className="w-16 px-2 py-1 rounded-[6px] bg-bg-elevated border border-border-subtle text-xs text-text-primary text-center"
-                min={1}
-              />
-              <span className="text-xs text-text-muted">词/天</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      <div className="px-5 pb-4">
-        <div className="h-3 rounded-full bg-bg-elevated overflow-hidden mb-2">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-accent-green to-accent-gold transition-all duration-700"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
-            <p className="text-lg font-bold text-accent-green">{vocabPlan.wordsLearned}</p>
-            <p className="text-[10px] text-text-muted">已学</p>
-          </div>
-          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
-            <p className="text-lg font-bold text-accent-gold">{vocabPlan.dailyTarget}</p>
-            <p className="text-[10px] text-text-muted">日目标</p>
-          </div>
-          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
-            <p className="text-lg font-bold text-info">{vocabPlan.estimatedDays}</p>
-            <p className="text-[10px] text-text-muted">天完成</p>
-          </div>
-        </div>
-
-        <p className="text-[10px] text-text-muted text-center mt-2">
-          剩余 <span className="text-text-secondary font-semibold">{remaining}</span> 词 · 每天 {vocabPlan.dailyTarget} 词 · 预计 <span className="text-text-secondary font-semibold">{vocabPlan.estimatedDays}</span> 天学完
-        </p>
-      </div>
-    </Card>
   )
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────
 export default function Vocab() {
-  const { vocabList: sharedVocab } = useVocabTaskStore()
-  const [words, setWords] = useState<Word[]>(INITIAL_WORDS)
-  const [mode, setMode] = useState<StudyMode>('browse')
+  const { vocabList: savedWords, addToStudyPlan } = useVocabTaskStore()
+  const [view, setView] = useState<ViewMode>('chapters')
+  const [activeChapterId, setActiveChapterId] = useState<string>('')
+  const [studyMode, setStudyMode] = useState<StudyMode>('browse')
   const [searchQuery, setSearchQuery] = useState('')
-  const [levelFilter, setLevelFilter] = useState<MasteryLevel | 'all'>('all')
   const [flashcardIndex, setFlashcardIndex] = useState(0)
-  const [quizIndex, setQuizIndex] = useState(0)
-  const [quizDone, setQuizDone] = useState(false)
-  const [quizCorrect, setQuizCorrect] = useState(0)
 
-  // Shared vocab stats
-  const sharedStats = useMemo(() => {
-    const total = sharedVocab.length
-    const mastered = 0 // could track mastery in store
-    return { total, mastered, dueCount: total, pct: total > 0 ? Math.round((mastered / total) * 100) : 0 }
-  }, [sharedVocab])
+  const chapterList = getChapterList()
+  const totalLexiconWords = chapterList.reduce((sum, c) => sum + c.wordCount, 0)
 
-  const filtered = useMemo(() => {
-    return words.filter((w) => {
-      const matchLevel = levelFilter === 'all' || w.level === levelFilter
-      const matchSearch =
-        !searchQuery ||
-        w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        w.meaning.includes(searchQuery)
-      return matchLevel && matchSearch
-    })
-  }, [words, levelFilter, searchQuery])
-
+  // ─── Flatten words for flashcard ─────────────────────────────────────
   const flashcardWords = useMemo(() => {
-    const priority = words.filter((w) => w.level === 'new' || w.level === 'learning')
-    const others = words.filter((w) => w.level !== 'new' && w.level !== 'learning')
-    return [...priority, ...others]
-  }, [words])
+    const all = flattenAllWords()
+    // Add user's saved words as custom items
+    savedWords.forEach((w) => {
+      all.push({
+        word: { word: [w.word], pos: w.pos, meaning: w.meaning, example: w.example, extra: '' },
+        chapterId: '__saved__',
+        groupIndex: -1,
+      })
+    })
+    // Shuffle
+    return all.sort(() => Math.random() - 0.5)
+  }, [savedWords])
 
-  const stats = useMemo(() => {
-    const total = words.length
-    const mastered = words.filter((w) => w.level === 'mastered').length
-    const dueCount = words.filter((w) => w.level === 'new' || w.level === 'learning').length
-    return { total, mastered, dueCount, pct: Math.round((mastered / total) * 100) }
-  }, [words])
+  // ─── Search across all words ─────────────────────────────────────────
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const q = searchQuery.toLowerCase()
+    return flattenAllWords().filter(({ word }) =>
+      word.word.some((w) => w.toLowerCase().includes(q)) ||
+      word.meaning.toLowerCase().includes(q)
+    ).slice(0, 20)
+  }, [searchQuery])
 
-  const handleRate = useCallback((id: string, rating: 'again' | 'hard' | 'good' | 'easy') => {
-    setWords((prev) => prev.map((w) => {
-      if (w.id !== id) return w
-      const delta = rating === 'again' ? -0.2 : rating === 'hard' ? 0.05 : rating === 'good' ? 0.15 : 0.2
-      const newMastery = Math.max(0, Math.min(1, w.mastery + delta))
-      const newLevel: MasteryLevel =
-        newMastery >= 0.8 ? 'mastered' :
-        newMastery >= 0.5 ? 'review' :
-        newMastery >= 0.2 ? 'learning' : 'new'
-      return { ...w, mastery: newMastery, level: newLevel }
+  // ─── Navigate to chapter ─────────────────────────────────────────────
+  const openChapter = useCallback((id: string) => {
+    setActiveChapterId(id)
+    setView('chapter')
+    setStudyMode('browse')
+    setFlashcardIndex(0)
+  }, [])
+
+  // ─── Add all chapter words to study plan ─────────────────────────────
+  const addChapterToStudy = useCallback((chapterId: string) => {
+    const words = flattenChapter(chapterId).map(({ word: lw }) => ({
+      id: `lex-${chapterId}-${lw.word[0]}-${Date.now()}`,
+      word: lw.word[0],
+      phonetic: '',
+      pos: lw.pos,
+      meaning: lw.meaning,
+      example: lw.example,
+      savedAt: new Date().toISOString().slice(0, 10),
+      srs: { interval: 0, repetition: 0, efactor: 2.5, state: 'new' as const, dueDate: new Date().toISOString().slice(0, 10), lastReviewed: '', lapseCount: 0 },
     }))
+    addToStudyPlan(words)
+  }, [addToStudyPlan])
+
+  // ─── Flashcard rating handler ────────────────────────────────────────
+  const handleRate = useCallback((word: LexiconWord, rating: SimpleRating) => {
+    console.log(`[Flashcard] rated ${rating} for "${word.word[0]}": ${word.meaning}`)
   }, [])
-
-  const handleFlashcardNext = () => {
-    // Always advance (even on last card triggers completed state)
-    if (flashcardIndex < flashcardWords.length - 1) {
-      setFlashcardIndex((i) => i + 1)
-    } else {
-      // On last card, force index beyond bounds to show completion
-      setFlashcardIndex(flashcardWords.length)
-    }
-  }
-
-  const handleQuizAnswer = useCallback((correct: boolean) => {
-    if (correct) setQuizCorrect((c) => c + 1)
-  }, [])
-
-  const handleQuizNext = () => {
-    const quizTotal = Math.min(5, filtered.length)
-    if (quizIndex + 1 >= quizTotal) {
-      setQuizDone(true)
-    } else {
-      setQuizIndex((i) => i + 1)
-    }
-  }
-
-  const restartFlashcard = () => setFlashcardIndex(0)
-
-  const restartQuiz = () => {
-    setQuizIndex(0)
-    setQuizDone(false)
-    setQuizCorrect(0)
-  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">📚 词汇学习</h1>
-          <p className="text-sm text-text-muted mt-1">专注记忆 · 间隔重复 · 智能复习</p>
+          <h1 className="text-2xl font-bold text-text-primary">📚 雅思词汇真经</h1>
+          <p className="text-sm text-text-muted mt-1">
+            22 个话题 · {totalLexiconWords.toLocaleString()} 个核心词汇 · 逻辑词群记忆法
+          </p>
         </div>
-        <div className="flex rounded-[10px] bg-bg-elevated p-1 gap-1">
-          {([
-            { key: 'browse' as StudyMode, label: '浏览', icon: '📖' },
-            { key: 'flashcard' as StudyMode, label: '闪卡', icon: '🃏' },
-            { key: 'quiz' as StudyMode, label: '测验', icon: '✏️' },
-          ] as const).map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setMode(m.key)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold transition-all duration-200 cursor-pointer',
-                mode === m.key
-                  ? 'bg-accent-green text-bg-primary'
-                  : 'text-text-secondary hover:text-text-primary'
-              )}
-            >
-              <span>{m.icon}</span>{m.label}
-            </button>
-          ))}
-        </div>
+        {view !== 'chapters' && (
+          <button onClick={() => setView('chapters')} className="text-xs text-accent-green hover:underline cursor-pointer">
+            ← 返回话题列表
+          </button>
+        )}
       </div>
 
-      {/* Vocab Plan + Stats Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-        {/* Vocab Plan */}
-        <div className="lg:col-span-2">
-          <VocabPlanEditor />
-        </div>
+      {/* ─── Search bar (always visible) ─── */}
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="搜索单词或中文释义…"
+      />
 
-        {/* Stats Bar */}
-        <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-          {[
-            { label: '词汇总量', value: stats.total, color: 'text-text-primary' },
-            { label: '已掌握', value: stats.mastered, color: 'text-accent-green' },
-            { label: '今日待学', value: stats.dueCount, color: 'text-accent-gold' },
-            { label: '掌握率', value: `${stats.pct}%`, color: 'text-info' },
-          ].map((s) => (
-            <Card key={s.label} variant="stats">
-              <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
-              <p className="text-[10px] text-text-muted mt-0.5">{s.label}</p>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Shared vocab preview */}
-      {sharedVocab.length > 0 && (
-        <Card className="bg-accent-gold/5 border-accent-gold/20">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">📖</span>
-              <h3 className="text-sm font-semibold text-text-primary">收藏的生词（{sharedVocab.length}）</h3>
-            </div>
-            <span className="text-[10px] text-text-muted">来自阅读和图书馆</span>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {sharedVocab.slice(0, 10).map((w) => (
-              <span key={w.id} className="px-2.5 py-1 rounded-[6px] bg-bg-card border border-accent-gold/20 text-xs text-text-secondary">
-                {w.word}
-              </span>
-            ))}
-            {sharedVocab.length > 10 && (
-              <span className="px-2.5 py-1 text-xs text-text-muted">+{sharedVocab.length - 10} 更多</span>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* ─── BROWSE MODE ─── */}
-      {mode === 'browse' && (
-        <>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索单词或中文释义…" />
-            </div>
-            <div className="flex gap-1.5 flex-wrap">
-              <button onClick={() => setLevelFilter('all')} className={cn('px-3 py-2 rounded-[8px] text-xs font-medium transition-all duration-200 cursor-pointer', levelFilter === 'all' ? 'bg-accent-green text-bg-primary' : 'text-text-secondary border border-border-subtle hover:border-accent-green/50')}>
-                全部 {words.length}
-              </button>
-              {(Object.entries(LEVEL_CONFIG) as [MasteryLevel, typeof LEVEL_CONFIG[MasteryLevel]][]).map(([key, cfg]) => {
-                const count = words.filter((w) => w.level === key).length
-                return (
-                  <button key={key} onClick={() => setLevelFilter(key)} className={cn(
-                    'px-3 py-2 rounded-[8px] text-xs font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                    levelFilter === key ? `${cfg.bg} ${cfg.color} border-current border` : 'text-text-secondary border border-border-subtle hover:border-border-accent'
-                  )}>
-                    <div className={cn('w-1.5 h-1.5 rounded-full', cfg.dot)} />
-                    {cfg.label} {count}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {filtered.length === 0 && (
-              <div className="text-center py-12">
-                <span className="text-4xl mb-3 block">🔍</span>
-                <p className="text-sm text-text-muted">没有找到匹配的单词</p>
-              </div>
-            )}
-            {filtered.map((word) => (
-              <BrowseWordCard key={word.id} word={word} onLevelChange={(id, level) => setWords((prev) => prev.map((w) => w.id === id ? { ...w, level, mastery: { new: 0.1, learning: 0.35, review: 0.6, mastered: 0.9 }[level] } : w))} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ─── FLASHCARD MODE ─── */}
-      {mode === 'flashcard' && (
-        <>
-          {/* Level summary pills */}
-          <div className="flex gap-2 flex-wrap">
-            {(Object.entries(LEVEL_CONFIG) as [MasteryLevel, typeof LEVEL_CONFIG[MasteryLevel]][]).map(([key, cfg]) => {
-              const count = flashcardWords.filter((w) => w.level === key).length
+      {/* Search results */}
+      {searchQuery && searchResults.length > 0 && (
+        <Card>
+          <h3 className="text-sm font-semibold text-text-primary mb-3">搜索结果 ({searchResults.length})</h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {searchResults.map(({ word, chapterId }, idx) => {
+              const ch = IELTS_LEXICON[chapterId]
               return (
-                <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-bg-elevated text-xs">
-                  <div className={cn('w-1.5 h-1.5 rounded-full', cfg.dot)} />
-                  <span className="text-text-muted">{cfg.label}</span>
-                  <Badge variant="default" size="sm">{count}</Badge>
+                <div key={idx} className="flex items-center gap-3 p-3 rounded-[10px] bg-bg-elevated border border-border-subtle">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-text-primary">{word.word[0]}</span>
+                      <span className="text-xs text-text-muted italic">{word.pos}</span>
+                      <Badge variant="default" size="sm" className="text-[10px]">{ch?.topic || chapterId}</Badge>
+                    </div>
+                    <p className="text-xs text-text-secondary mt-0.5">{word.meaning}</p>
+                  </div>
+                  <button
+                    onClick={() => openChapter(chapterId)}
+                    className="text-xs text-accent-green hover:underline cursor-pointer whitespace-nowrap"
+                  >
+                    查看章节
+                  </button>
                 </div>
               )
             })}
           </div>
+        </Card>
+      )}
 
-          {flashcardIndex < flashcardWords.length ? (
-            <Flashcard
-              key={flashcardWords[flashcardIndex].id}
-              word={flashcardWords[flashcardIndex]}
-              onRate={handleRate}
-              onNext={handleFlashcardNext}
-              isLast={flashcardIndex === flashcardWords.length - 1}
-              total={flashcardWords.length}
-              index={flashcardIndex}
-            />
-          ) : (
-            <Card className="text-center py-10 max-w-md mx-auto">
-              <span className="text-5xl mb-4 block">🎉</span>
-              <h3 className="text-xl font-bold text-text-primary mb-2">本轮学习完成！</h3>
-              <p className="text-sm text-text-muted mb-6">太棒了，已复习完所有词汇</p>
-              <div className="flex gap-3 justify-center">
-                <Button variant="secondary" onClick={restartFlashcard}>🔄 再学一轮</Button>
-                <Button variant="primary" onClick={() => setMode('browse')}>📖 回到浏览</Button>
+      {/* ─── CHAPTERS LIST ─── */}
+      {view === 'chapters' && !searchQuery && (
+        <>
+          {/* Stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: '话题总数', value: chapterList.length, color: 'text-text-primary' },
+              { label: '词汇总量', value: totalLexiconWords, color: 'text-text-primary' },
+              { label: '收藏生词', value: savedWords.length, color: 'text-accent-gold' },
+              { label: '待复习', value: savedWords.filter((w) => w.srs.dueDate <= new Date().toISOString().slice(0, 10)).length, color: 'text-danger' },
+            ].map((s) => (
+              <Card key={s.label} variant="stats">
+                <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{s.label}</p>
+              </Card>
+            ))}
+          </div>
+
+          {/* Saved words preview */}
+          {savedWords.length > 0 && (
+            <Card className="bg-accent-gold/5 border-accent-gold/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span>📖</span>
+                  <h3 className="text-sm font-semibold text-text-primary">收藏的生词（{savedWords.length}）</h3>
+                </div>
+                <span className="text-[10px] text-text-muted">来自阅读和图书馆</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {savedWords.slice(0, 15).map((w) => (
+                  <span key={w.id} className="px-2.5 py-1 rounded-[6px] bg-bg-card border border-accent-gold/20 text-xs text-text-secondary">
+                    {w.word}
+                  </span>
+                ))}
+                {savedWords.length > 15 && (
+                  <span className="px-2.5 py-1 text-xs text-text-muted">+{savedWords.length - 15} 更多</span>
+                )}
               </div>
             </Card>
           )}
+
+          {/* Chapter grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {chapterList.map((ch) => {
+              const chapter = IELTS_LEXICON[ch.id]
+              return (
+                <Card
+                  key={ch.id}
+                  variant="interactive"
+                  className="cursor-pointer"
+                  onClick={() => openChapter(ch.id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-text-primary">{ch.topic}</span>
+                      </div>
+                      <p className="text-[10px] text-text-muted">
+                        {chapter?.groupCount || 0} 个词群 · {ch.wordCount} 个词
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                      <Badge variant="default" size="sm">{ch.wordCount}</Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); addChapterToStudy(ch.id) }}
+                        className="text-[10px] text-accent-green hover:underline cursor-pointer"
+                        title="加入今日学习计划"
+                      >
+                        + 计划
+                      </button>
+                    </div>
+                  </div>
+                  {/* Chapter audio */}
+                  <audio
+                    className="mt-3 w-full h-6"
+                    controls
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <source src={`/vocabulary/audio/${ch.id}.mp3`} type="audio/mpeg" />
+                  </audio>
+                </Card>
+              )
+            })}
+          </div>
         </>
       )}
 
-      {/* ─── QUIZ MODE ─── */}
-      {mode === 'quiz' && (
+      {/* ─── CHAPTER DETAIL ─── */}
+      {view === 'chapter' && activeChapterId && (
         <>
-          {!quizDone ? (
-            <>
-              <div className="flex gap-2 flex-wrap">
-                <span className="text-xs text-text-muted py-1.5">出题范围：</span>
-                <button onClick={() => { setLevelFilter('all'); restartQuiz() }} className={cn('px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all duration-200 cursor-pointer', levelFilter === 'all' ? 'bg-accent-green text-bg-primary' : 'text-text-secondary border border-border-subtle')}>
-                  全部
-                </button>
-                {(Object.keys(LEVEL_CONFIG) as MasteryLevel[]).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => { setLevelFilter(key); restartQuiz() }}
-                    className={cn(
-                      'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                      levelFilter === key ? `${LEVEL_CONFIG[key].bg} ${LEVEL_CONFIG[key].color} border-current border` : 'text-text-secondary border border-border-subtle'
-                    )}
-                  >
-                    <div className={cn('w-1.5 h-1.5 rounded-full', LEVEL_CONFIG[key].dot)} />
-                    {LEVEL_CONFIG[key].label}
-                  </button>
-                ))}
-              </div>
+          {/* Chapter header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-text-primary">{IELTS_LEXICON[activeChapterId]?.topic}</h2>
+              <p className="text-xs text-text-muted">
+                {IELTS_LEXICON[activeChapterId]?.groupCount} 个词群 · {IELTS_LEXICON[activeChapterId]?.wordCount} 个词
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => addChapterToStudy(activeChapterId)}
+                className="text-xs text-accent-green hover:underline cursor-pointer"
+              >
+                + 加入今日计划
+              </button>
+            </div>
+          </div>
 
-              {filtered.length > 0 ? (
-                <QuizQuestion
-                  key={`quiz-${quizIndex}`}
-                  word={filtered[quizIndex]}
-                  onAnswer={handleQuizAnswer}
-                  onNext={handleQuizNext}
-                  questionIndex={quizIndex + 1}
-                  total={Math.min(5, filtered.length)}
-                  isLast={quizIndex + 1 >= Math.min(5, filtered.length)}
+          {/* Mode switcher */}
+          <div className="flex rounded-[10px] bg-bg-elevated p-1 gap-1 w-fit">
+            {([
+              { key: 'browse' as StudyMode, label: '词群浏览', icon: '📖' },
+              { key: 'flashcard' as StudyMode, label: '闪卡记忆', icon: '🃏' },
+              { key: 'practice' as StudyMode, label: '拼写练习', icon: '✏️' },
+            ] as const).map((m) => (
+              <button
+                key={m.key}
+                onClick={() => setStudyMode(m.key)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold transition-all duration-200 cursor-pointer',
+                  studyMode === m.key
+                    ? 'bg-accent-green text-bg-primary'
+                    : 'text-text-secondary hover:text-text-primary'
+                )}
+              >
+                <span>{m.icon}</span>{m.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ─── BROWSE ─── */}
+          {studyMode === 'browse' && (
+            <div className="overflow-x-auto rounded-lg border border-border-subtle">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="p-3 text-left text-xs text-gray-500">#</th>
+                    <th className="p-3 text-left text-xs text-gray-500">词</th>
+                    <th className="p-3 text-left text-xs text-gray-500">词性</th>
+                    <th className="p-3 text-left text-xs text-gray-500">词义</th>
+                    <th className="p-3 text-left text-xs text-gray-500">例句</th>
+                    <th className="p-3 text-left text-xs text-gray-500">拓展</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800">
+                  {(() => {
+                    const chapter = IELTS_LEXICON[activeChapterId]
+                    if (!chapter) return null
+                    const rows: React.ReactNode[] = []
+                    let rowIdx = 0
+                    chapter.groups.forEach((group, gi) => {
+                      rows.push(
+                        <tr key={`group-${gi}`} className="bg-gray-100 dark:bg-gray-700">
+                          <td colSpan={6} className="px-4 py-2 text-xs font-bold text-text-muted">
+                            第 {gi + 1} 组词群
+                          </td>
+                        </tr>
+                      )
+                      group.forEach((word, wi) => {
+                        rowIdx++
+                        rows.push(
+                          <tr key={`word-${gi}-${wi}`} className={rowIdx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''}>
+                            <td className="p-3 text-xs text-gray-400">{rowIdx}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    const audio = new Audio(`/vocabulary/audio/${activeChapterId}/${word.word[0]}.mp3`)
+                                    audio.play().catch(() => {})
+                                  }}
+                                  className="text-text-muted hover:text-accent-green cursor-pointer"
+                                  title="播放发音"
+                                >
+                                  🔊
+                                </button>
+                                {word.word.map((w, wi2) => (
+                                  <a
+                                    key={wi2}
+                                    href={`https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${w}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-bold text-text-primary hover:underline"
+                                  >
+                                    {w}
+                                  </a>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-3 text-xs italic" style={{ fontFamily: 'Times' }}>{word.pos}</td>
+                            <td className="p-3 text-sm text-text-primary">{word.meaning}</td>
+                            <td className="p-3 text-xs text-text-muted max-w-[200px]">{word.example !== '-' ? word.example : ''}</td>
+                            <td className="p-3 text-xs text-info max-w-[150px]">{word.extra !== '-' ? word.extra : ''}</td>
+                          </tr>
+                        )
+                      })
+                    })
+                    return rows
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ─── FLASHCARD ─── */}
+          {studyMode === 'flashcard' && (
+            <div className="space-y-6">
+              {flashcardIndex < flashcardWords.length ? (
+                <FlashcardCard
+                  key={`${flashcardWords[flashcardIndex].chapterId}-${flashcardIndex}`}
+                  word={flashcardWords[flashcardIndex].word}
+                  chapterId={flashcardWords[flashcardIndex].chapterId}
+                  onRate={(r) => handleRate(flashcardWords[flashcardIndex].word, r)}
+                  onNext={() => setFlashcardIndex((i) => i + 1)}
+                  index={flashcardIndex}
+                  total={flashcardWords.length}
                 />
               ) : (
-                <Card className="text-center py-10">
-                  <span className="text-4xl mb-3 block">🔍</span>
-                  <p className="text-sm text-text-muted">该分类下暂无词汇</p>
-                  <Button variant="primary" size="sm" className="mt-4" onClick={() => setLevelFilter('all')}>查看全部</Button>
+                <Card className="text-center py-12 max-w-md mx-auto">
+                  <span className="text-5xl mb-4 block">🎉</span>
+                  <h3 className="text-xl font-bold text-text-primary mb-2">本轮学习完成！</h3>
+                  <p className="text-sm text-text-muted mb-6">太棒了，已复习完所有词汇</p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="secondary" onClick={() => setFlashcardIndex(0)}>🔄 再学一轮</Button>
+                    <Button variant="primary" onClick={() => setStudyMode('browse')}>📖 回到浏览</Button>
+                  </div>
                 </Card>
               )}
-            </>
-          ) : (
-            <Card className="text-center py-10 max-w-md mx-auto">
-              <span className="text-5xl mb-4 block">🏆</span>
-              <h3 className="text-xl font-bold text-text-primary mb-2">测验完成！</h3>
-              <div className="my-6">
-                <p className="text-5xl font-bold text-accent-green mb-1">
-                  {quizCorrect}/{Math.min(5, filtered.length)}
-                </p>
-                <p className="text-sm text-text-muted">
-                  正确率 {Math.round((quizCorrect / Math.min(5, filtered.length)) * 100)}%
-                </p>
-              </div>
-              <div className="flex gap-3 justify-center">
-                <Button variant="secondary" onClick={restartQuiz}>🔄 再测一轮</Button>
-                <Button variant="primary" onClick={() => { restartQuiz(); setMode('flashcard') }}>🃏 去闪卡练习</Button>
-              </div>
-            </Card>
+            </div>
+          )}
+
+          {/* ─── PRACTICE ─── */}
+          {studyMode === 'practice' && (
+            <PracticeMode chapterId={activeChapterId} />
           )}
         </>
       )}

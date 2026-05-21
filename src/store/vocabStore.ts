@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { VocabWord } from '@/lib/dictionary'
+import type { VocabWord, SimpleRating } from '@/lib/dictionary'
+import { calculateSM2 } from '@/lib/dictionary'
 import type { StudyTask } from '@/types/study'
 import { useStudyStore } from './studyStore'
 
@@ -30,6 +31,9 @@ interface VocabTaskState {
   addToStudyPlan: (words: VocabWord[]) => void
   removeFromStudyPlan: (wordId: string) => void
   isInStudyPlan: (wordId: string) => boolean
+
+  // SM-2 复习评分
+  updateWordRating: (wordId: string, rating: SimpleRating) => void
 }
 
 export const useVocabTaskStore = create<VocabTaskState>((set, get) => ({
@@ -127,6 +131,28 @@ export const useVocabTaskStore = create<VocabTaskState>((set, get) => ({
     const today = new Date().toISOString().slice(0, 10)
     const taskId = `vocab-${wordId}-${today}`
     return useStudyStore.getState().tasks.some((t) => t.id === taskId)
+  },
+
+  // ─── SM-2 复习评分 ─────────────────────────────────────────────
+  // 根据用户评分更新单词的 SRS 数据（间隔重复算法）
+  updateWordRating: (wordId, rating) => {
+    set((state) => {
+      const word = state.vocabList.find((w) => w.id === wordId)
+      if (!word) return state
+      const newSRS = calculateSM2(word.srs, rating)
+      return {
+        vocabList: state.vocabList.map((w) =>
+          w.id === wordId ? { ...w, srs: newSRS } : w
+        ),
+        // 更新掌握进度
+        vocabPlan: {
+          ...state.vocabPlan,
+          wordsLearned: state.vocabList.filter(
+            (w) => w.srs.state === 'review' && w.srs.repetition >= 3
+          ).length,
+        },
+      }
+    })
   },
 }))
 
