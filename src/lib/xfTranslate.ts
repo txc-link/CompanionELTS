@@ -1,15 +1,15 @@
-// ─── 讯飞机器翻译 API v2 ─────────────────────────────────────────────
-// 文档: https://www.xfyun.cn/doc/nlp/xftrans/API.html
-// 端点: https://itrans.xfyun.cn/v2/its
+// ─── 机器翻译 niutrans（小牛翻译） ─────────────────────────────────────
+// 文档: https://www.xfyun.cn/doc/nlp/niutrans/API.html
+// 端点: https://ntrans.xfyun.cn/v2/ots
 //
-// ⚠️重要：讯飞 v2 需要 Date / Digest / Authorization 等鉴权头；
+// ⚠️重要：该 WebAPI 需要 Date / Digest / Authorization 等鉴权头；
 // 这些 header 在浏览器 fetch 里属于 forbidden headers（无法可靠设置）。
 // 因此：鉴权与转发在 Vite dev server 的中间件中完成（vite.config.ts）。
 // 浏览器端仅把请求 body 和 apiKey/apiSecret 通过自定义 header 传给本地中间件。
 
 const XF_API_KEY_KEY = 'xftranslate_api_key'
 const XF_API_SECRET_KEY = 'xftranslate_api_secret'
-const XF_API_URL = '/api/xf/v2/its'
+const XF_API_URL = '/api/xf/v2/ots'
 const XF_HDR_API_KEY = 'x-xf-api-key'
 const XF_HDR_API_SECRET = 'x-xf-api-secret'
 
@@ -36,13 +36,23 @@ export function getXfApiSecret(): string { try { return localStorage.getItem(XF_
 export function setXfApiSecret(key: string) { try { localStorage.setItem(XF_API_SECRET_KEY, key) } catch {} }
 export function isXfConfigured(): boolean { return !!(getXfApiKey() && getXfApiSecret()) }
 
+function normalizeLangForNiutrans(lang: string): string {
+  const v = (lang || '').toLowerCase()
+  if (!v) return v
+  // niutrans: 中文(简体)=cn，中文(繁体)=cht
+  if (v === 'zh' || v.startsWith('zh-')) return 'cn'
+  if (v === 'zh-cn' || v === 'zh-hans' || v === 'zh-chs') return 'cn'
+  if (v === 'zh-tw' || v === 'zh-hant' || v === 'zh-cht') return 'cht'
+  return v
+}
+
 /**
- * 讯飞机器翻译 API v2
- * 文档: https://www.xfyun.cn/doc/nlp/xftrans/API.html
- * 端点: https://itrans.xfyun.cn/v2/its
+ * 机器翻译 niutrans（小牛翻译）
+ * 文档: https://www.xfyun.cn/doc/nlp/niutrans/API.html
+ * 端点: https://ntrans.xfyun.cn/v2/ots
  * 鉴权: HMAC-SHA256, headers="host date request-line digest"
  * Body: { common: { app_id }, business: { from, to }, data: { text: base64 } }
- * 注意: text 需要 base64 编码，且 base64 编码后大小不超过 1024 bytes
+ * 注意: text 需要 base64 编码；niutrans 允许更大的文本（base64 后 ≤ 20000 bytes）
  */
 export async function translateWithXf(
   text: string,
@@ -56,11 +66,14 @@ export async function translateWithXf(
     const apiSecret = getXfApiSecret()
     if (!appId) return null
 
+    const fromLang = normalizeLangForNiutrans(from)
+    const toLang = normalizeLangForNiutrans(to)
+
     // Body: v2 格式，text 必须 base64 编码，compact JSON（无空格）
     const textB64 = btoa(text)
     const body = JSON.stringify({
       common: { app_id: appId },
-      business: { from, to },
+      business: { from: fromLang, to: toLang },
       data: { text: textB64 },
     }, null, 0) // 紧凑格式，无空格
 

@@ -49,15 +49,20 @@ export default defineConfig({
  * - 浏览器通过自定义 header 传入 apiKey/apiSecret：x-xf-api-key / x-xf-api-secret
  */
 function xfyunMtProxy() {
-  const HOST = 'itrans.xfyun.cn'
-  const UPSTREAM_URL = `https://${HOST}/v2/its`
   const HDR_KEY = 'x-xf-api-key'
   const HDR_SECRET = 'x-xf-api-secret'
 
   return {
     name: 'xfyun-mt-proxy',
     configureServer(server: any) {
-      server.middlewares.use('/api/xf/v2/its', (req: any, res: any, next: any) => {
+      const routes = [
+        // 讯飞机器翻译（旧）
+        { route: '/api/xf/v2/its', host: 'itrans.xfyun.cn', path: '/v2/its' },
+        // 机器翻译 niutrans（小牛翻译）
+        { route: '/api/xf/v2/ots', host: 'ntrans.xfyun.cn', path: '/v2/ots' },
+      ]
+
+      for (const r of routes) server.middlewares.use(r.route, (req: any, res: any, next: any) => {
         if (req.method === 'OPTIONS') {
           res.statusCode = 204
           res.end()
@@ -78,9 +83,10 @@ function xfyunMtProxy() {
         req.on('data', (chunk: any) => { body += chunk })
         req.on('end', async () => {
           try {
+            const UPSTREAM_URL = `https://${r.host}${r.path}`
             const date = new Date().toUTCString()
             const digest = 'SHA-256=' + crypto.createHash('sha256').update(body, 'utf8').digest('base64')
-            const signOrigin = `host: ${HOST}\ndate: ${date}\nPOST /v2/its HTTP/1.1\ndigest: ${digest}`
+            const signOrigin = `host: ${r.host}\ndate: ${date}\nPOST ${r.path} HTTP/1.1\ndigest: ${digest}`
             const signature = crypto.createHmac('sha256', apiSecret).update(signOrigin).digest('base64')
             const authorization = `api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line digest", signature="${signature}"`
 
