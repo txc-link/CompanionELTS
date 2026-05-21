@@ -4,6 +4,8 @@ import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { useVocabTaskStore, vocabWordToTask } from '@/store'
+import type { VocabWord } from '@/lib/dictionary'
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type MasteryLevel = 'new' | 'learning' | 'review' | 'mastered'
@@ -371,8 +373,113 @@ function BrowseWordCard({
   )
 }
 
+// ─── Vocab Plan Editor ───────────────────────────────────────────────────
+function VocabPlanEditor() {
+  const { vocabPlan, setPlanTotal, setDailyTarget } = useVocabTaskStore()
+  const [editing, setEditing] = useState(false)
+  const [totalInput, setTotalInput] = useState(String(vocabPlan.totalWords))
+  const [targetInput, setTargetInput] = useState(String(vocabPlan.dailyTarget))
+
+  const progress = Math.min(100, (vocabPlan.wordsLearned / vocabPlan.totalWords) * 100)
+  const remaining = Math.max(0, vocabPlan.totalWords - vocabPlan.wordsLearned)
+
+  const save = () => {
+    const t = parseInt(totalInput) || vocabPlan.totalWords
+    const d = parseInt(targetInput) || vocabPlan.dailyTarget
+    setPlanTotal(t)
+    setDailyTarget(d)
+    setEditing(false)
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      {/* Plan header */}
+      <div className="px-5 pt-5 pb-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎯</span>
+            <h3 className="text-sm font-bold text-text-primary">词汇学习计划</h3>
+          </div>
+          <button
+            onClick={() => {
+              if (editing) {
+                save()
+              } else {
+                setTotalInput(String(vocabPlan.totalWords))
+                setTargetInput(String(vocabPlan.dailyTarget))
+                setEditing(true)
+              }
+            }}
+            className="text-xs text-accent-green hover:underline cursor-pointer"
+          >
+            {editing ? '保存' : '编辑计划'}
+          </button>
+        </div>
+
+        {editing && (
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-1.5 flex-1">
+              <label className="text-xs text-text-muted whitespace-nowrap">总词汇量</label>
+              <input
+                type="number"
+                value={totalInput}
+                onChange={(e) => setTotalInput(e.target.value)}
+                className="w-20 px-2 py-1 rounded-[6px] bg-bg-elevated border border-border-subtle text-xs text-text-primary text-center"
+                min={1}
+              />
+              <span className="text-xs text-text-muted">词</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-1">
+              <label className="text-xs text-text-muted whitespace-nowrap">每日目标</label>
+              <input
+                type="number"
+                value={targetInput}
+                onChange={(e) => setTargetInput(e.target.value)}
+                className="w-16 px-2 py-1 rounded-[6px] bg-bg-elevated border border-border-subtle text-xs text-text-primary text-center"
+                min={1}
+              />
+              <span className="text-xs text-text-muted">词/天</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-5 pb-4">
+        <div className="h-3 rounded-full bg-bg-elevated overflow-hidden mb-2">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-accent-green to-accent-gold transition-all duration-700"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
+            <p className="text-lg font-bold text-accent-green">{vocabPlan.wordsLearned}</p>
+            <p className="text-[10px] text-text-muted">已学</p>
+          </div>
+          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
+            <p className="text-lg font-bold text-accent-gold">{vocabPlan.dailyTarget}</p>
+            <p className="text-[10px] text-text-muted">日目标</p>
+          </div>
+          <div className="text-center p-2 rounded-[8px] bg-bg-elevated">
+            <p className="text-lg font-bold text-info">{vocabPlan.estimatedDays}</p>
+            <p className="text-[10px] text-text-muted">天完成</p>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-text-muted text-center mt-2">
+          剩余 <span className="text-text-secondary font-semibold">{remaining}</span> 词 · 每天 {vocabPlan.dailyTarget} 词 · 预计 <span className="text-text-secondary font-semibold">{vocabPlan.estimatedDays}</span> 天学完
+        </p>
+      </div>
+    </Card>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────
 export default function Vocab() {
+  const { vocabList: sharedVocab } = useVocabTaskStore()
   const [words, setWords] = useState<Word[]>(INITIAL_WORDS)
   const [mode, setMode] = useState<StudyMode>('browse')
   const [searchQuery, setSearchQuery] = useState('')
@@ -381,6 +488,13 @@ export default function Vocab() {
   const [quizIndex, setQuizIndex] = useState(0)
   const [quizDone, setQuizDone] = useState(false)
   const [quizCorrect, setQuizCorrect] = useState(0)
+
+  // Shared vocab stats
+  const sharedStats = useMemo(() => {
+    const total = sharedVocab.length
+    const mastered = 0 // could track mastery in store
+    return { total, mastered, dueCount: total, pct: total > 0 ? Math.round((mastered / total) * 100) : 0 }
+  }, [sharedVocab])
 
   const filtered = useMemo(() => {
     return words.filter((w) => {
@@ -480,20 +594,51 @@ export default function Vocab() {
         </div>
       </div>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: '词汇总量', value: stats.total, color: 'text-text-primary' },
-          { label: '已掌握', value: stats.mastered, color: 'text-accent-green' },
-          { label: '今日待学', value: stats.dueCount, color: 'text-accent-gold' },
-          { label: '掌握率', value: `${stats.pct}%`, color: 'text-info' },
-        ].map((s) => (
-          <Card key={s.label} variant="stats">
-            <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
-            <p className="text-[10px] text-text-muted mt-0.5">{s.label}</p>
-          </Card>
-        ))}
+      {/* Vocab Plan + Stats Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        {/* Vocab Plan */}
+        <div className="lg:col-span-2">
+          <VocabPlanEditor />
+        </div>
+
+        {/* Stats Bar */}
+        <div className="lg:col-span-2 grid grid-cols-2 gap-3">
+          {[
+            { label: '词汇总量', value: stats.total, color: 'text-text-primary' },
+            { label: '已掌握', value: stats.mastered, color: 'text-accent-green' },
+            { label: '今日待学', value: stats.dueCount, color: 'text-accent-gold' },
+            { label: '掌握率', value: `${stats.pct}%`, color: 'text-info' },
+          ].map((s) => (
+            <Card key={s.label} variant="stats">
+              <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">{s.label}</p>
+            </Card>
+          ))}
+        </div>
       </div>
+
+      {/* Shared vocab preview */}
+      {sharedVocab.length > 0 && (
+        <Card className="bg-accent-gold/5 border-accent-gold/20">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📖</span>
+              <h3 className="text-sm font-semibold text-text-primary">收藏的生词（{sharedVocab.length}）</h3>
+            </div>
+            <span className="text-[10px] text-text-muted">来自阅读和图书馆</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {sharedVocab.slice(0, 10).map((w) => (
+              <span key={w.id} className="px-2.5 py-1 rounded-[6px] bg-bg-card border border-accent-gold/20 text-xs text-text-secondary">
+                {w.word}
+              </span>
+            ))}
+            {sharedVocab.length > 10 && (
+              <span className="px-2.5 py-1 text-xs text-text-muted">+{sharedVocab.length - 10} 更多</span>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* ─── BROWSE MODE ─── */}
       {mode === 'browse' && (

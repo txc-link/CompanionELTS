@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { lookupWord, buildVocabWord, type VocabWord } from '@/lib/dictionary'
 import { translateWithGoogle, getGoogleApiKey } from '@/lib/translate'
+import { useVocabTaskStore } from '@/store/vocabStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────
 interface Book {
@@ -148,8 +149,8 @@ function SelectionToolbar({
   const isSingle = text.trim().split(/\s+/).length === 1
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
-    setTimeout(() => document.addEventListener('click', h), 0)
-    return () => document.removeEventListener('click', h)
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [onClose])
   const top = position.y - 50 < 0 ? position.y + 20 : position.y - 50
 
@@ -292,11 +293,13 @@ export default function Library() {
   // Reading state
   const [readingTime, setReadingTime] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [vocabList, setVocabList] = useState<VocabWord[]>([])
   const [vocabSidebarOpen, setVocabSidebarOpen] = useState(false)
   const [selection, setSelection] = useState<SelectedTextState>({ text: '', x: 0, y: 0, visible: false, paragraphIdx: -1 })
   const [translateText, setTranslateText] = useState<string | null>(null)
   const [noteTarget, setNoteTarget] = useState<string | null>(null)
+
+  // Shared vocab store
+  const { addWord, removeWord, vocabList } = useVocabTaskStore()
 
   const activeBook = books.find((b) => b.id === activeBookId) || null
   const contentLines = activeBook?.content || []
@@ -371,12 +374,9 @@ export default function Library() {
   // ─── Vocab ───────────────────────────────────────────────────────────
   const addToVocab = useCallback((text: string) => {
     const newWord = buildVocabWord(text, { sourceBook: activeBook?.title })
-    setVocabList((prev) => {
-      if (prev.some((v) => v.word.toLowerCase() === newWord.word.toLowerCase())) return prev
-      return [newWord, ...prev]
-    })
+    addWord(newWord)
     setVocabSidebarOpen(true)
-  }, [activeBook])
+  }, [activeBook, addWord])
 
   // ─── Reader-Scoped State for Instant Feedback ─────────────────────────
   const [readerHighlights, setReaderHighlights] = useState<Highlight[]>([])
@@ -703,7 +703,7 @@ export default function Library() {
                           <p className="text-xs font-semibold text-text-primary truncate">{w.word}</p>
                           <p className="text-[9px] text-text-muted truncate">{w.meaning.split('；')[0]}</p>
                         </div>
-                        <button onClick={() => setVocabList((prev) => prev.filter((v) => v.id !== w.id))} className="text-text-muted hover:text-danger cursor-pointer">
+                        <button onClick={() => removeWord(w.id)} className="text-text-muted hover:text-danger cursor-pointer">
                           <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                         </button>
                       </div>

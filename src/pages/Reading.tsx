@@ -1,81 +1,18 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { cn } from '@/utils/cn'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { lookupWord, buildVocabWord, type VocabWord } from '@/lib/dictionary'
+import { useVocabTaskStore } from '@/store/vocabStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────
-interface VocabWord {
-  id: string
-  word: string
-  phonetic: string
-  pos: string
-  meaning: string
-  example: string
-  savedAt: string
-  sourceParagraph?: string
-}
 
 interface SelectedTextState {
   text: string
   x: number
   y: number
   visible: boolean
-}
-
-// ─── Mock Dictionary ─────────────────────────────────────────────────────
-const DICTIONARY: Record<string, { phonetic: string; pos: string; meaning: string; example: string }> = {
-  artificial: { phonetic: '/ˌɑːrtɪˈfɪʃl/', pos: 'adj.', meaning: '人造的；虚假的；矫揉造作的', example: 'The artificial intelligence system can process millions of data points per second.' },
-  intelligence: { phonetic: '/ɪnˈtelɪdʒəns/', pos: 'n.', meaning: '智力；情报；智能', example: 'Her intelligence and dedication made her an invaluable member of the team.' },
-  employment: { phonetic: '/ɪmˈplɔɪmənt/', pos: 'n.', meaning: '就业；雇用；职业', example: 'The government introduced new policies to boost employment rates.' },
-  multifaceted: { phonetic: '/ˌmʌltiˈfæsɪtɪd/', pos: 'adj.', meaning: '多方面的；多才多艺的', example: 'The problem requires a multifaceted approach to solve.' },
-  automation: { phonetic: '/ˌɔːtəˈmeɪʃn/', pos: 'n.', meaning: '自动化；自动操作', example: 'Factory automation has significantly increased production efficiency.' },
-  displacement: { phonetic: '/dɪsˈpleɪsmənt/', pos: 'n.', meaning: '取代；置换；被迫迁移', example: 'Technological displacement of workers is a growing concern in many industries.' },
-  occupations: { phonetic: '/ˌɑːkjuˈpeɪʃnz/', pos: 'n.', meaning: '职业；占有（复数）', example: 'Many traditional occupations are being transformed by digital technology.' },
-  unprecedented: { phonetic: '/ʌnˈpresɪdentɪd/', pos: 'adj.', meaning: '空前的；史无前例的', example: 'The pandemic caused unprecedented disruption to global supply chains.' },
-  productivity: { phonetic: '/ˌprɑːdʌkˈtɪvəti/', pos: 'n.', meaning: '生产力；生产率', example: 'Remote work has had mixed effects on employee productivity.' },
-  resilience: { phonetic: '/rɪˈzɪliəns/', pos: 'n.', meaning: '韧性；恢复力；弹力', example: 'The community showed remarkable resilience in the face of adversity.' },
-  emerging: { phonetic: '/ɪˈmɜːrdʒɪŋ/', pos: 'adj.', meaning: '新兴的；出现的', example: 'Emerging markets are driving global economic growth.' },
-  profound: { phonetic: '/prəˈfaʊnd/', pos: 'adj.', meaning: '深刻的；意义深远的', example: 'The discovery had a profound impact on medical science.' },
-  transition: { phonetic: '/trænˈzɪʃn/', pos: 'n.', meaning: '过渡；转变；转换', example: 'The transition to renewable energy will take decades.' },
-  delicate: { phonetic: '/ˈdelɪkət/', pos: 'adj.', meaning: '微妙的；精致的；脆弱的', example: 'Negotiations require a delicate balance of competing interests.' },
-  innovation: { phonetic: '/ˌɪnəˈveɪʃn/', pos: 'n.', meaning: '创新；革新；新事物', example: 'Innovation is the key to staying competitive in the modern economy.' },
-  imperative: { phonetic: '/ɪmˈperətɪv/', pos: 'adj.', meaning: '必要的；紧急的；命令的', example: 'It is imperative that we address climate change without delay.' },
-  contemporary: { phonetic: '/kənˈtempəreri/', pos: 'adj.', meaning: '当代的；同时代的', example: 'Contemporary art often challenges traditional notions of beauty.' },
-  contested: { phonetic: '/kənˈtestɪd/', pos: 'adj.', meaning: '有争议的；争夺的', example: 'The election results were highly contested by both parties.' },
-  terrain: { phonetic: '/təˈreɪn/', pos: 'n.', meaning: '地形；领域；地势', example: 'Navigating the political terrain requires skill and diplomacy.' },
-  proponents: { phonetic: '/prəˈpoʊnənts/', pos: 'n.', meaning: '支持者；倡导者', example: 'Proponents of the new policy argue it will boost economic growth.' },
-  autonomy: { phonetic: '/ɔːˈtɑːnəmi/', pos: 'n.', meaning: '自主权；自治；自主', example: 'Employees value autonomy in how they manage their work.' },
-  arrangements: { phonetic: '/əˈreɪndʒmənts/', pos: 'n.', meaning: '安排；布置；协议', example: 'Flexible working arrangements have become more common post-pandemic.' },
-  erosion: { phonetic: '/ɪˈroʊʒn/', pos: 'n.', meaning: '侵蚀；削弱；腐蚀', example: 'There has been a gradual erosion of trust in traditional institutions.' },
-  bargaining: { phonetic: '/ˈbɑːrɡənɪŋ/', pos: 'n.', meaning: '谈判；讨价还价', example: 'Collective bargaining is a fundamental right of workers.' },
-}
-
-function lookupWord(word: string): { phonetic: string; pos: string; meaning: string; example: string } | null {
-  const clean = word.toLowerCase().replace(/[^a-z]/g, '')
-  const exact = DICTIONARY[clean]
-  if (exact) return exact
-  // Fuzzy match
-  const keys = Object.keys(DICTIONARY)
-  for (const key of keys) {
-    if (key.startsWith(clean) || clean.startsWith(key) || key.includes(clean)) {
-      return DICTIONARY[key]
-    }
-    // Levenshtein within 2 edits
-    if (levenshtein(key, clean) <= 2) return DICTIONARY[key]
-  }
-  return null
-}
-
-function levenshtein(a: string, b: string): number {
-  const m = a.length, n = b.length
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
-  for (let i = 0; i <= m; i++) dp[i][0] = i
-  for (let j = 0; j <= n; j++) dp[0][j] = j
-  for (let i = 1; i <= m; i++)
-    for (let j = 1; j <= n; j++)
-      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1
-  return dp[m][n]
 }
 
 // ─── Paragraph Translations (mock) ───────────────────────────────────────
@@ -132,13 +69,13 @@ function SelectionToolbar({
   const isSingleWord = text.trim().split(/\s+/).length === 1
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent) => {
       if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
-    setTimeout(() => document.addEventListener('click', handleClickOutside), 0)
-    return () => document.removeEventListener('click', handleClickOutside)
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [onClose])
 
   // Adjust position to stay in viewport
@@ -332,10 +269,10 @@ export default function Reading() {
 
   // Translation popover
   const [translateText, setTranslateText] = useState<string | null>(null)
-
-  // Vocab collection
-  const [vocabList, setVocabList] = useState<VocabWord[]>([])
   const [vocabSidebarOpen, setVocabSidebarOpen] = useState(false)
+
+  // Shared vocab store
+  const { addWord, removeWord, vocabList } = useVocabTaskStore()
 
   // Paragraph translations toggle
   const [showParaTrans, setShowParaTrans] = useState<Set<number>>(new Set())
@@ -365,31 +302,15 @@ export default function Reading() {
 
   // Add to vocab
   const addToVocab = useCallback((text: string) => {
-    const clean = text.trim().toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/)[0]
-    const info = lookupWord(clean)
-    if (!info) return
-
-    setVocabList((prev) => {
-      if (prev.some((v) => v.word.toLowerCase() === clean)) return prev
-      const newWord: VocabWord = {
-        id: `v-${Date.now()}`,
-        word: clean,
-        phonetic: info.phonetic,
-        pos: info.pos,
-        meaning: info.meaning,
-        example: info.example,
-        savedAt: new Date().toISOString().slice(0, 10),
-        sourceParagraph: text.substring(0, 80),
-      }
-      return [newWord, ...prev]
-    })
+    const newWord = buildVocabWord(text, { sourceParagraph: text.substring(0, 80) })
+    addWord(newWord)
     setSelection((s) => ({ ...s, visible: false }))
     setVocabSidebarOpen(true)
-  }, [])
+  }, [addWord])
 
   const removeVocab = useCallback((id: string) => {
-    setVocabList((prev) => prev.filter((v) => v.id !== id))
-  }, [])
+    removeWord(id)
+  }, [removeWord])
 
   const toggleParaTrans = (idx: number) => {
     setShowParaTrans((prev) => {
