@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -115,7 +115,15 @@ export default function Dashboard() {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(
     new Set(mockTasks.filter((t) => t.status === 'completed').map((t) => t.id))
   )
-  const weekDays = useState(getWeekDays)[0]
+  const weekDays = getWeekDays()
+  const todayRef = useRef<HTMLButtonElement>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const calendarRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to today on mount
+  useEffect(() => {
+    todayRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [])
 
   const toggleTask = (id: string) => {
     setCompletedTasks((prev) => {
@@ -145,12 +153,23 @@ export default function Dashboard() {
       </div>
 
       {/* Calendar Strip */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+      <div ref={calendarRef} className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
         {weekDays.map((day) => (
           <button
             key={day.date}
+            ref={day.isToday ? todayRef : undefined}
+            onClick={() => {
+              setSelectedDate(day.date)
+              calendarRef.current?.scrollTo({
+                left: weekDays.indexOf(day) * 68,
+                behavior: 'smooth',
+              })
+            }}
             className={cn(
               'flex flex-col items-center gap-1.5 py-2.5 px-3.5 rounded-[12px] min-w-[52px] transition-all duration-200 flex-shrink-0 cursor-pointer',
+              selectedDate === day.date
+                ? 'ring-2 ring-accent-green ring-offset-1 ring-offset-bg-primary'
+                : '',
               day.isToday
                 ? 'bg-accent-green text-bg-primary'
                 : 'bg-bg-card border border-border-subtle text-text-secondary hover:bg-bg-elevated'

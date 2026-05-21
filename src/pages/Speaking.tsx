@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { cn } from '@/utils/cn'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -67,17 +67,17 @@ export default function Speaking() {
   const [submitted, setSubmitted] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
-  const timerRef = useState<ReturnType<typeof setInterval>>()[1]
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   function startRecording() {
     setRecordingState('recording')
     setRecordingTime(0)
     // Mock recording timer
-    const id = setInterval(() => setRecordingTime((t) => t + 1), 1000)
-    timerRef(id)
+    timerRef.current = setInterval(() => setRecordingTime((t) => t + 1), 1000)
   }
 
   function stopRecording() {
+    if (timerRef.current) clearInterval(timerRef.current)
     setRecordingState('processing')
     // Mock transcription
     setTimeout(() => {

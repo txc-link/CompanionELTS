@@ -53,13 +53,18 @@ export default function Writing() {
   const minWords = activeTask === 'task1' ? 150 : 250
   const wordOk = wordCount >= minWords
 
+  // Character count for display (works for both Chinese and English)
+  const charCount = essay.trim().length
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">{'\u270D\uFE0F'} AI \u5199\u4F5C\u6279\u6539</h1>
+        <h1 className="text-2xl font-bold text-text-primary">
+          ✍️ AI 写作批改
+        </h1>
         <p className="text-sm text-text-muted mt-1">
-          \u591A\u8003\u5B98\u6A21\u5F0F \u00B7 \u652F\u6301\u8D28\u7591\u8BC4\u5206
+          多考官模式 · 支持质疑评分
         </p>
       </div>
 
@@ -81,7 +86,7 @@ export default function Writing() {
                       : 'text-text-secondary hover:text-text-primary'
                   )}
                 >
-                  {task === 'task1' ? 'Task 1' : 'Task 2'}
+                  {task === 'task1' ? 'Task 1 图表' : 'Task 2 议论文'}
                 </button>
               ))}
             </div>
@@ -114,8 +119,12 @@ export default function Writing() {
                 wordOk ? 'text-accent-green' : 'text-danger'
               )}
             >
-              {wordCount} / {activeTask === 'task1' ? '150' : '250'}\u5B57
-              {wordOk ? '' : ' (\u672A\u8FBE\u5230\u6700\u4F4E\u5B57\u6570\u8981\u6C42)'}
+              {wordCount} / {minWords} 字
+              {!wordOk && (
+                <span className="text-danger/80 ml-1">
+                  （未达到最低字数要求）
+                </span>
+              )}
             </span>
 
             <div className="flex items-center gap-3">
