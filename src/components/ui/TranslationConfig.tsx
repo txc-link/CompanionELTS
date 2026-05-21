@@ -172,7 +172,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setXfAppIdState(getXfAppId())
       setEnabled(getEnabledServices())
     } catch { /* localStorage access failed */ }
-  }, [])
+  }, [xfAppId])
 
   const isConfigured = (key: ServiceKey) => {
     if (key === 'google') return !!googleApiKey
@@ -212,6 +212,10 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
   }, [googleApiKey, baiduApiKey, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret, xfAppId])
 
   const handleTest = useCallback(async (key: ServiceKey) => {
+    if (key === 'xf' && !xfAppId.trim()) {
+      setTestResult({ key, success: false, message: '请先填写并保存 APPID，再点击测试' })
+      return
+    }
     setTestKey(key)
     setTestResult(null)
     try {
