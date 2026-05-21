@@ -172,7 +172,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setXfAppIdState(getXfAppId())
       setEnabled(getEnabledServices())
     } catch { /* localStorage access failed */ }
-  }, [xfAppId])
+  }, [])
 
   const isConfigured = (key: ServiceKey) => {
     if (key === 'google') return !!googleApiKey
@@ -201,7 +201,15 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       if (key === 'google') setGoogleApiKey(googleApiKey.trim())
       if (key === 'baidu') { setBaiduApiKey(baiduApiKey.trim()); setBaiduSecretKey(baiduSecretKey.trim()) }
       if (key === 'youdao') { setYoudaoAppKey(youdaoAppKey.trim()); setYoudaoAppSecret(youdaoAppSecret.trim()) }
-      if (key === 'xf') { setXfApiKey(xfApiKey.trim()); setXfApiSecret(xfApiSecret.trim()); setXfAppId(xfAppId.trim()) }
+      if (key === 'xf') {
+        setXfAppId(xfAppId.trim())
+        setXfApiKey(xfApiKey.trim())
+        setXfApiSecret(xfApiSecret.trim())
+        // 同步更新 React 状态，确保 input 显示保存后的值
+        setXfAppIdState(xfAppId.trim())
+        setXfApiKeyState(xfApiKey.trim())
+        setXfApiSecretState(xfApiSecret.trim())
+      }
       setTestResult({ key, success: true, message: '凭证已保存' })
     } catch {
       setTestResult({ key, success: false, message: '保存失败' })
