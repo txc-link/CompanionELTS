@@ -5,7 +5,10 @@ import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 import { ToastContainer } from '@/components/ui/Toast'
 import { useUIStore } from '@/store/uiStore'
+import { useAuthStore } from '@/store/authStore'
+import { useStudyStore } from '@/store/studyStore'
 import { cn } from '@/utils/cn'
+import { mockUser, mockPartner, mockStudyTasks, mockStudyStats, mockAchievements } from '@/test/mockData'
 
 // Lazy load pages
 import Dashboard from '@/pages/Dashboard'
@@ -45,6 +48,18 @@ function PlaceholderPage({ title }: { title: string }) {
 export default function AppLayout() {
   const location = useLocation()
   const { sidebarCollapsed, sidebarOpen, setSidebarOpen, setCurrentPage } = useUIStore()
+  const { login, bindPartner } = useAuthStore()
+  const { setTasks, setStats, setAchievements } = useStudyStore()
+
+  // Initialize mock data for development
+  useEffect(() => {
+    login(mockUser)
+    bindPartner(mockPartner)
+    setTasks(mockStudyTasks)
+    setStats(mockStudyStats)
+    setAchievements(mockAchievements)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Update current page based on location
   useEffect(() => {
