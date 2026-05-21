@@ -59,11 +59,9 @@ async function getAccessToken(): Promise<string | null> {
       client_secret: secretKey,
     })
     const url = `${BD_TOKEN_URL}?${params.toString()}`
-    console.log('[Baidu OAuth] requesting:', url.replace(apiKey, '***').replace(secretKey, '***'))
     const res = await fetch(url, { method: 'POST' })
     const status = res.status
     const text = await res.text()
-    console.log('[Baidu OAuth] status:', status, 'body:', text)
     let data: { error?: string; error_description?: string; access_token?: string; expires_in?: number }
     try { data = JSON.parse(text) } catch { data = {} }
     if (data.error || status !== 200) {

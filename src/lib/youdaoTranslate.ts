@@ -140,8 +140,9 @@ export async function translateWithYoudao(
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
     })
-    if (!res.ok) return null
+    if (!res.ok) { console.warn('[Youdao] HTTP error:', res.status); return null }
     const data = await res.json()
+    console.log('[Youdao] response:', JSON.stringify(data).substring(0, 200))
 
     // 成功: { "errorCode": "0", "translation": ["结果"] }
     if (data.errorCode !== '0') {

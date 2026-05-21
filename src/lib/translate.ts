@@ -24,11 +24,13 @@ export async function translateWithGoogle(
   if (!apiKey) return null
 
   try {
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`
+    const url = `https://translation.googleapis.com/language/translate/v2`
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, target: targetLang, source: sourceLang, format: 'text' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ q: text, target: targetLang, source: sourceLang, format: 'text', key: apiKey }),
     })
     if (!res.ok) return null
     const data = await res.json()
@@ -48,11 +50,13 @@ export async function batchTranslateWithGoogle(
   if (!apiKey || texts.length === 0) return {}
 
   try {
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`
+    const url = `https://translation.googleapis.com/language/translate/v2`
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: texts, target: targetLang, source: sourceLang, format: 'text' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ q: texts, target: targetLang, source: sourceLang, format: 'text', key: apiKey }),
     })
     if (!res.ok) return {}
     const data = await res.json()

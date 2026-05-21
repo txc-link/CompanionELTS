@@ -183,13 +183,16 @@ export async function translateWithXf(
       },
     })
 
+    console.log('[Xunfei] url:', url.replace(apiKey, '***').replace(apiSecret, '***'))
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
     })
-    if (!res.ok) return null
+    console.log('[Xunfei] status:', res.status)
+    if (!res.ok) { console.warn('[Xunfei] HTTP error:', res.status); return null }
     const json = await res.json()
+    console.log('[Xunfei] response:', JSON.stringify(json).substring(0, 300))
 
     // 讯飞返回: { "code": 0, "data": { "result": { "trans_result": [{ "dst": "..." }] } } }
     const result = json?.data?.result
