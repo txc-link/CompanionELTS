@@ -53,6 +53,7 @@ interface SelectedTextState {
   x: number
   y: number
   visible: boolean
+  paragraphIdx: number
 }
 
 // ─── Dictionary ──────────────────────────────────────────────────────────
@@ -311,7 +312,7 @@ export default function Library() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [vocabList, setVocabList] = useState<VocabWord[]>([])
   const [vocabSidebarOpen, setVocabSidebarOpen] = useState(false)
-  const [selection, setSelection] = useState<SelectedTextState>({ text: '', x: 0, y: 0, visible: false })
+  const [selection, setSelection] = useState<SelectedTextState>({ text: '', x: 0, y: 0, visible: false, paragraphIdx: -1 })
   const [translateText, setTranslateText] = useState<string | null>(null)
   const [noteTarget, setNoteTarget] = useState<string | null>(null)
 
@@ -367,9 +368,23 @@ export default function Library() {
     if (!sel || sel.isCollapsed || !sel.toString().trim()) { setSelection((s) => ({ ...s, visible: false })); return }
     const text = sel.toString().trim().substring(0, 200)
     const range = sel.getRangeAt(0)
+
+    // Find the paragraph container to determine correct paragraphIdx
+    let el: HTMLElement | null = range.startContainer instanceof HTMLElement ? range.startContainer : range.startContainer.parentElement
+    let paraIdx = -1
+    while (el) {
+      if (el.dataset.paraIdx) {
+        paraIdx = parseInt(el.dataset.paraIdx, 10)
+        break
+      }
+      el = el.parentElement
+    }
+    // Fallback to currentPage if DOM lookup fails
+    if (paraIdx < 0) paraIdx = currentPage
+
     const rect = range.getBoundingClientRect()
-    setSelection({ text, x: rect.left + rect.width / 2, y: rect.top, visible: true })
-  }, [])
+    setSelection({ text, x: rect.left + rect.width / 2, y: rect.top, visible: true, paragraphIdx: paraIdx })
+  }, [currentPage])
 
   // ─── Vocab ───────────────────────────────────────────────────────────
   const addToVocab = useCallback((text: string) => {
@@ -407,14 +422,15 @@ export default function Library() {
   // ─── Highlight ───────────────────────────────────────────────────────
   const addHighlight = useCallback((text: string, color: 'yellow' | 'green' | 'blue' | 'pink') => {
     const id = `hl-${Date.now()}`
-    const paraIdx = currentPage
+    // Use the actual paragraph index from the selection (determined via DOM lookup)
+    const paraIdx = selection.paragraphIdx >= 0 ? selection.paragraphIdx : currentPage
     setReaderHighlights((prev) => {
       const existing = prev.find((h) => h.text === text && h.paragraphIdx === paraIdx)
       if (existing) return prev.map((h) => h.id === existing.id ? { ...h, color } : h)
       return [...prev, { id, text, color, bookId: activeBookId || '', paragraphIdx: paraIdx, createdAt: new Date().toISOString() }]
     })
-    setSelection((s) => ({ ...s, visible: false }))
-  }, [activeBookId, currentPage])
+    setSelection({ text: '', x: 0, y: 0, visible: false, paragraphIdx: -1 })
+  }, [activeBookId, selection.paragraphIdx, currentPage])
 
   const removeHighlight = useCallback((id: string) => {
     setReaderHighlights((prev) => prev.filter((h) => h.id !== id))
@@ -423,9 +439,10 @@ export default function Library() {
   // ─── Notes ───────────────────────────────────────────────────────────
   const addNote = useCallback((noteText: string) => {
     if (!activeBookId || !noteTarget) return
-    setReaderNotes((prev) => [...prev, { id: `n-${Date.now()}`, text: noteText, bookId: activeBookId, paragraphIdx: currentPage, createdAt: new Date().toISOString() }])
+    const noteParaIdx = selection.paragraphIdx >= 0 ? selection.paragraphIdx : currentPage
+    setReaderNotes((prev) => [...prev, { id: `n-${Date.now()}`, text: noteText, bookId: activeBookId, paragraphIdx: noteParaIdx, createdAt: new Date().toISOString() }])
     setNoteTarget(null)
-  }, [activeBookId, currentPage, noteTarget])
+  }, [activeBookId, currentPage, noteTarget, selection.paragraphIdx])
 
   // Exit reader and persist
   const exitReader = useCallback(() => {
@@ -615,7 +632,7 @@ export default function Library() {
                 const isMDTitle = line.startsWith('#')
 
                 return (
-                  <div key={paraIdx} className="group relative">
+                  <div key={paraIdx} className="group relative" data-para-idx={paraIdx}>
                     {/* Highlighted text rendering */}
                     {hl.length > 0 ? (
                       <div
