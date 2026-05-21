@@ -5,7 +5,7 @@
 
 const BD_APP_ID_KEY = 'baidu_translate_app_id'
 const BD_SECRET_KEY = 'baidu_translate_secret_key'
-const BD_API_URL = 'https://fanyi-api.baidu.com/v201203607'
+const BD_API_URL = 'https://fanyi-api.baidu.com/api/trans/vip/translate'
 
 // ─── Pure-JS MD5 (RFC 1321) ──────────────────────────────────────────────
 function md5(str: string): string {
@@ -181,10 +181,10 @@ export async function translateWithBaidu(
     if (!res.ok) return null
     const data = await res.json()
 
-    // 成功: { "error": 0, "trans_result": [{ "src": "...", "dst": "..." }] }
-    // 失败: { "error": xx, "error_msg": "..." }
-    if (data.error !== undefined && data.error !== 0) {
-      console.warn('[Baidu] error:', data.error, data.error_msg)
+    // 成功: { "from": "en", "to": "zh", "trans_result": [{ "src": "...", "dst": "..." }] }
+    // 失败: { "error_code": "52001", "error_msg": "..." } 或 { "error_code": "54001", ... }
+    if (data.error_code !== undefined) {
+      console.warn('[Baidu] error:', data.error_code, data.error_msg)
       return null
     }
     return data?.trans_result?.[0]?.dst ?? null

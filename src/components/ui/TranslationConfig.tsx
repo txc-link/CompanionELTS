@@ -9,195 +9,223 @@ interface TranslationConfigProps {
   className?: string
 }
 
-type ActiveService = 'google' | 'baidu' | 'youdao' | 'xf'
+type ServiceKey = 'google' | 'baidu' | 'youdao' | 'xf'
 
-// 服务配置项
-const SERVICES: { key: ActiveService; label: string; icon: string }[] = [
-  { key: 'google', label: 'Google', icon: '🔤' },
-  { key: 'baidu', label: '百度', icon: '🌸' },
-  { key: 'youdao', label: '有道', icon: '📖' },
-  { key: 'xf', label: '讯飞', icon: '🎤' },
+interface ServiceMeta {
+  key: ServiceKey
+  label: string
+  icon: string
+  desc: string
+  color: string
+}
+
+const SERVICES_META: ServiceMeta[] = [
+  { key: 'google', label: 'Google', icon: '🔤', desc: 'Google Cloud Translation', color: '#4285F4' },
+  { key: 'baidu', label: '百度', icon: '🌸', desc: '百度翻译开放平台', color: '#2932E1' },
+  { key: 'youdao', label: '有道', icon: '📖', desc: '网易有道智云', color: '#D83B01' },
+  { key: 'xf', label: '讯飞', icon: '🎤', desc: '讯飞开放平台', color: '#18B36B' },
 ]
 
-export default function TranslationConfig({ className }: TranslationConfigProps) {
-  // Google
-  const [googleApiKey, setGoogleApiKeyState] = useState('')
-  const [isGoogleConfigured, setIsGoogleConfigured] = useState(false)
-  const [isGoogleSaving, setIsGoogleSaving] = useState(false)
+// ─── Persist enabled state ─────────────────────────────────────────────────
+const ENABLED_KEY = 'translation_services_enabled'
+const ENABLED_DEFAULT: Record<ServiceKey, boolean> = { google: true, baidu: false, youdao: false, xf: false }
 
-  // Baidu
+function getEnabledServices(): Record<ServiceKey, boolean> {
+  try {
+    const raw = localStorage.getItem(ENABLED_KEY)
+    return raw ? JSON.parse(raw) : ENABLED_DEFAULT
+  } catch { return ENABLED_DEFAULT }
+}
+function setEnabledServices(val: Record<ServiceKey, boolean>) {
+  try { localStorage.setItem(ENABLED_KEY, JSON.stringify(val)) } catch {}
+}
+
+// ─── Service Card ─────────────────────────────────────────────────────────
+function ServiceCard({
+  meta,
+  isConfigured,
+  isEnabled,
+  onToggle,
+  onExpand,
+  expanded,
+  children,
+}: {
+  meta: ServiceMeta
+  isConfigured: boolean
+  isEnabled: boolean
+  onToggle: (key: ServiceKey) => void
+  onExpand: (key: ServiceKey) => void
+  expanded: ServiceKey | null
+  children: React.ReactNode
+}) {
+  const isExpanded = expanded === meta.key
+
+  return (
+    <div className={cn(
+      'rounded-[12px] border transition-all duration-200',
+      isEnabled
+        ? 'border-accent-green/30 bg-accent-green/[0.03]'
+        : 'border-border-subtle bg-bg-card',
+    )}>
+      {/* Card Header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Status dot */}
+          <div className={cn(
+            'w-2 h-2 rounded-full transition-all duration-300',
+            isEnabled
+              ? isConfigured ? 'bg-accent-green shadow-[0_0_6px_rgba(110,197,110,0.6)]' : 'bg-accent-gold shadow-[0_0_6px_rgba(234,179,8,0.6)]'
+              : 'bg-text-muted/30'
+          )} />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">{meta.icon}</span>
+              <span className="text-sm font-semibold text-text-primary">{meta.label}</span>
+            </div>
+            <p className="text-[10px] text-text-muted">{meta.desc}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Configured badge */}
+          <span className={cn(
+            'text-[10px] px-1.5 py-0.5 rounded-full',
+            isConfigured ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-elevated text-text-muted'
+          )}>
+            {isConfigured ? '已配置' : '未配置'}
+          </span>
+
+          {/* Toggle switch */}
+          <button
+            onClick={() => onToggle(meta.key)}
+            className={cn(
+              'relative w-10 h-5 rounded-full transition-all duration-300 cursor-pointer',
+              isEnabled ? 'bg-accent-green' : 'bg-bg-elevated border border-border-subtle'
+            )}
+            aria-label={isEnabled ? `禁用 ${meta.label}` : `启用 ${meta.label}`}
+          >
+            <span className={cn(
+              'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300',
+              isEnabled ? 'left-[22px]' : 'left-0.5'
+            )} />
+          </button>
+        </div>
+      </div>
+
+      {/* Expand/Collapse credentials */}
+      <button
+        onClick={() => onExpand(meta.key)}
+        className="w-full flex items-center justify-center gap-1 py-1.5 border-t border-border-subtle/50 text-xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
+      >
+        <span>{isExpanded ? '收起' : '配置凭证'}</span>
+        <svg
+          width="10" height="10" viewBox="0 0 10 10" fill="none"
+          className={cn('transition-transform duration-200', isExpanded ? 'rotate-180' : '')}
+        >
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {/* Credentials area */}
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-2 border-t border-border-subtle/30">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────
+export default function TranslationConfig({ className }: TranslationConfigProps) {
+  // Credential states
+  const [googleApiKey, setGoogleApiKeyState] = useState('')
   const [baiduAppId, setBaiduAppIdState] = useState('')
   const [baiduSecretKey, setBaiduSecretKeyState] = useState('')
-  const [isBaiduConfiguredState, setIsBaiduConfiguredState] = useState(false)
-  const [isBaiduSaving, setIsBaiduSaving] = useState(false)
-
-  // Youdao
   const [youdaoAppKey, setYoudaoAppKeyState] = useState('')
   const [youdaoAppSecret, setYoudaoAppSecretState] = useState('')
-  const [isYoudaoConfiguredState, setIsYoudaoConfiguredState] = useState(false)
-  const [isYoudaoSaving, setIsYoudaoSaving] = useState(false)
-
-  // Xunfei
   const [xfApiKey, setXfApiKeyState] = useState('')
   const [xfApiSecret, setXfApiSecretState] = useState('')
-  const [isXfConfiguredState, setIsXfConfiguredState] = useState(false)
-  const [isXfSaving, setIsXfSaving] = useState(false)
 
-  // Test
-  const [activeService, setActiveService] = useState<ActiveService>('google')
-  const [isTesting, setIsTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  // UI state
+  const [enabled, setEnabled] = useState<Record<ServiceKey, boolean>>(ENABLED_DEFAULT)
+  const [expanded, setExpanded] = useState<ServiceKey | null>(null)
+  const [savingKey, setSavingKey] = useState<ServiceKey | null>(null)
+  const [testKey, setTestKey] = useState<ServiceKey | null>(null)
+  const [testResult, setTestResult] = useState<{ key: ServiceKey; success: boolean; message: string } | null>(null)
 
-  // Load saved credentials
+  // Load
   useEffect(() => {
     try {
       setGoogleApiKeyState(getGoogleApiKey())
-      setIsGoogleConfigured(!!getGoogleApiKey())
       setBaiduAppIdState(getBaiduAppId())
       setBaiduSecretKeyState(getBaiduSecretKey())
-      setIsBaiduConfiguredState(isBaiduConfigured())
       setYoudaoAppKeyState(getYoudaoAppKey())
       setYoudaoAppSecretState(getYoudaoAppSecret())
-      setIsYoudaoConfiguredState(isYoudaoConfigured())
       setXfApiKeyState(getXfApiKey())
       setXfApiSecretState(getXfApiSecret())
-      setIsXfConfiguredState(isXfConfigured())
+      setEnabled(getEnabledServices())
     } catch { /* localStorage access failed */ }
   }, [])
 
-  const handleSaveGoogle = useCallback(() => {
-    setIsGoogleSaving(true)
+  const isConfigured = (key: ServiceKey) => {
+    if (key === 'google') return !!googleApiKey
+    if (key === 'baidu') return !!(baiduAppId && baiduSecretKey)
+    if (key === 'youdao') return !!(youdaoAppKey && youdaoAppSecret)
+    if (key === 'xf') return !!(xfApiKey && xfApiSecret)
+    return false
+  }
+
+  const handleToggle = useCallback((key: ServiceKey) => {
+    setEnabled((prev) => {
+      const next = { ...prev, [key]: !prev[key] }
+      setEnabledServices(next)
+      return next
+    })
+  }, [])
+
+  const handleExpand = useCallback((key: ServiceKey) => {
+    setExpanded((prev) => prev === key ? null : key)
+  }, [])
+
+  const handleSave = useCallback((key: ServiceKey) => {
+    setSavingKey(key)
     setTestResult(null)
     try {
-      setGoogleApiKey(googleApiKey.trim())
-      setIsGoogleConfigured(!!googleApiKey.trim())
-      setTestResult({ success: true, message: googleApiKey.trim() ? 'Google API Key 已保存' : 'Google API Key 已清除' })
+      if (key === 'google') setGoogleApiKey(googleApiKey.trim())
+      if (key === 'baidu') { setBaiduAppId(baiduAppId.trim()); setBaiduSecretKey(baiduSecretKey.trim()) }
+      if (key === 'youdao') { setYoudaoAppKey(youdaoAppKey.trim()); setYoudaoAppSecret(youdaoAppSecret.trim()) }
+      if (key === 'xf') { setXfApiKey(xfApiKey.trim()); setXfApiSecret(xfApiSecret.trim()) }
+      setTestResult({ key, success: true, message: '凭证已保存' })
     } catch {
-      setTestResult({ success: false, message: '保存失败' })
+      setTestResult({ key, success: false, message: '保存失败' })
     } finally {
-      setIsGoogleSaving(false)
+      setSavingKey(null)
       setTimeout(() => setTestResult(null), 3000)
     }
-  }, [googleApiKey])
+  }, [googleApiKey, baiduAppId, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret])
 
-  const handleSaveBaidu = useCallback(() => {
-    setIsBaiduSaving(true)
-    setTestResult(null)
-    try {
-      setBaiduAppId(baiduAppId.trim())
-      setBaiduSecretKey(baiduSecretKey.trim())
-      setIsBaiduConfiguredState(isBaiduConfigured())
-      setTestResult({ success: true, message: baiduAppId.trim() && baiduSecretKey.trim() ? '百度翻译凭证已保存' : '百度翻译凭证已清除' })
-    } catch {
-      setTestResult({ success: false, message: '保存失败' })
-    } finally {
-      setIsBaiduSaving(false)
-      setTimeout(() => setTestResult(null), 3000)
-    }
-  }, [baiduAppId, baiduSecretKey])
-
-  const handleSaveYoudao = useCallback(() => {
-    setIsYoudaoSaving(true)
-    setTestResult(null)
-    try {
-      setYoudaoAppKey(youdaoAppKey.trim())
-      setYoudaoAppSecret(youdaoAppSecret.trim())
-      setIsYoudaoConfiguredState(isYoudaoConfigured())
-      setTestResult({ success: true, message: youdaoAppKey.trim() && youdaoAppSecret.trim() ? '有道翻译凭证已保存' : '有道翻译凭证已清除' })
-    } catch {
-      setTestResult({ success: false, message: '保存失败' })
-    } finally {
-      setIsYoudaoSaving(false)
-      setTimeout(() => setTestResult(null), 3000)
-    }
-  }, [youdaoAppKey, youdaoAppSecret])
-
-  const handleSaveXf = useCallback(() => {
-    setIsXfSaving(true)
-    setTestResult(null)
-    try {
-      setXfApiKey(xfApiKey.trim())
-      setXfApiSecret(xfApiSecret.trim())
-      setIsXfConfiguredState(isXfConfigured())
-      setTestResult({ success: true, message: xfApiKey.trim() && xfApiSecret.trim() ? '讯飞翻译凭证已保存' : '讯飞翻译凭证已清除' })
-    } catch {
-      setTestResult({ success: false, message: '保存失败' })
-    } finally {
-      setIsXfSaving(false)
-      setTimeout(() => setTestResult(null), 3000)
-    }
-  }, [xfApiKey, xfApiSecret])
-
-  const handleTestTranslation = useCallback(async () => {
-    setIsTesting(true)
+  const handleTest = useCallback(async (key: ServiceKey) => {
+    setTestKey(key)
     setTestResult(null)
     try {
       let result: string | null = null
-      let ok = false
-
-      if (activeService === 'google') {
-        if (isGoogleConfigured) {
-          result = await translateWithGoogle('hello world', 'zh-CN')
-          ok = !!result
-          setTestResult(result ? { success: true, message: `Google 翻译成功: "${result}"` } : { success: false, message: 'Google 翻译失败，请检查 API Key' })
-        } else {
-          setTestResult({ success: false, message: '请先配置 Google 翻译凭证' })
-        }
-      } else if (activeService === 'baidu') {
-        if (isBaiduConfigured()) {
-          result = await translateWithBaidu('hello world', 'en', 'zh')
-          ok = !!result
-          setTestResult(result ? { success: true, message: `百度翻译成功: "${result}"` } : { success: false, message: '百度翻译失败，请检查 App ID 和 Secret Key' })
-        } else {
-          setTestResult({ success: false, message: '请先配置百度翻译凭证' })
-        }
-      } else if (activeService === 'youdao') {
-        if (isYoudaoConfigured()) {
-          result = await translateWithYoudao('hello world', 'auto', 'zh-CHS')
-          ok = !!result
-          setTestResult(result ? { success: true, message: `有道翻译成功: "${result}"` } : { success: false, message: '有道翻译失败，请检查 App Key 和 App Secret' })
-        } else {
-          setTestResult({ success: false, message: '请先配置有道翻译凭证' })
-        }
-      } else if (activeService === 'xf') {
-        if (isXfConfigured()) {
-          result = await translateWithXf('hello world', 'en', 'zh')
-          ok = !!result
-          setTestResult(result ? { success: true, message: `讯飞翻译成功: "${result}"` } : { success: false, message: '讯飞翻译失败，请检查 API Key 和 API Secret' })
-        } else {
-          setTestResult({ success: false, message: '请先配置讯飞翻译凭证' })
-        }
-      }
+      if (key === 'google') result = await translateWithGoogle('hello world', 'zh-CN')
+      else if (key === 'baidu') result = await translateWithBaidu('hello world', 'en', 'zh')
+      else if (key === 'youdao') result = await translateWithYoudao('hello world', 'auto', 'zh-CHS')
+      else if (key === 'xf') result = await translateWithXf('hello world', 'en', 'zh')
+      setTestResult({
+        key,
+        success: !!result,
+        message: result ? `翻译成功: "${result}"` : '翻译失败，请检查凭证是否正确',
+      })
     } catch {
-      setTestResult({ success: false, message: '翻译请求失败，请稍后重试' })
+      setTestResult({ key, success: false, message: '请求失败，请稍后重试' })
     } finally {
-      setIsTesting(false)
+      setTestKey(null)
       setTimeout(() => setTestResult(null), 5000)
     }
-  }, [activeService, isGoogleConfigured])
-
-  const isConfigured = (key: ActiveService) => {
-    if (key === 'google') return isGoogleConfigured
-    if (key === 'baidu') return isBaiduConfiguredState
-    if (key === 'youdao') return isYoudaoConfiguredState
-    if (key === 'xf') return isXfConfiguredState
-    return false
-  }
-
-  const isSaving = (key: ActiveService) => {
-    if (key === 'google') return isGoogleSaving
-    if (key === 'baidu') return isBaiduSaving
-    if (key === 'youdao') return isYoudaoSaving
-    if (key === 'xf') return isXfSaving
-    return false
-  }
-
-  const serviceLabels: Record<ActiveService, string> = {
-    google: 'Google',
-    baidu: '百度',
-    youdao: '有道',
-    xf: '讯飞',
-  }
+  }, [])
 
   return (
     <div className={cn('rounded-[16px] border border-border-subtle bg-bg-card p-[18px]', className)}>
@@ -205,191 +233,212 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
         🌐 翻译配置
       </div>
 
-      <div className="space-y-5">
-        {/* Google Translate */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', isGoogleConfigured ? 'bg-accent-green' : 'bg-text-muted/40')} />
-              <span className="text-sm text-text-secondary">Google Translate</span>
-            </div>
-            <span className={cn('text-xs px-2 py-0.5 rounded-full', isGoogleConfigured ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-elevated text-text-muted')}>
-              {isGoogleConfigured ? '已配置' : '未配置'}
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="google-api-key" className="text-xs font-medium text-text-secondary">API Key</label>
-            <input
-              id="google-api-key" type="password" value={googleApiKey}
-              onChange={(e) => { setGoogleApiKeyState(e.target.value); setIsGoogleConfigured(false) }}
-              placeholder="输入 Google Cloud API Key"
-              className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-            />
-          </div>
-          <button onClick={handleSaveGoogle} disabled={isGoogleSaving} className={cn('px-4 py-2 rounded-[8px] text-sm font-medium transition-all duration-200 bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed')}>
-            {isGoogleSaving ? '保存中...' : '保存'}
-          </button>
-          <p className="text-[10px] text-text-muted leading-relaxed">
-            获取：Google Cloud Console → API 和服务 → 凭据 → 创建 API 密钥
-          </p>
-        </div>
+      <div className="space-y-3">
+        {SERVICES_META.map((meta) => {
+          const configured = isConfigured(meta.key)
+          const isEnabled = enabled[meta.key]
+          const isExpanded = expanded === meta.key
+          const result = testResult?.key === meta.key ? testResult : null
 
-        <div className="border-t border-border-subtle" />
-
-        {/* Baidu Translate */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', isBaiduConfiguredState ? 'bg-accent-green' : 'bg-text-muted/40')} />
-              <span className="text-sm text-text-secondary">百度翻译</span>
-            </div>
-            <span className={cn('text-xs px-2 py-0.5 rounded-full', isBaiduConfiguredState ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-elevated text-text-muted')}>
-              {isBaiduConfiguredState ? '已配置' : '未配置'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="baidu-app-id" className="text-xs font-medium text-text-secondary">App ID</label>
-              <input
-                id="baidu-app-id" type="text" value={baiduAppId}
-                onChange={(e) => { setBaiduAppIdState(e.target.value); setIsBaiduConfiguredState(false) }}
-                placeholder="百度 App ID"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="baidu-secret-key" className="text-xs font-medium text-text-secondary">Secret Key</label>
-              <input
-                id="baidu-secret-key" type="password" value={baiduSecretKey}
-                onChange={(e) => { setBaiduSecretKeyState(e.target.value); setIsBaiduConfiguredState(false) }}
-                placeholder="安全码"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-          </div>
-          <button onClick={handleSaveBaidu} disabled={isBaiduSaving} className={cn('px-4 py-2 rounded-[8px] text-sm font-medium transition-all duration-200 bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed')}>
-            {isBaiduSaving ? '保存中...' : '保存'}
-          </button>
-          <p className="text-[10px] text-text-muted leading-relaxed">
-            获取：百度翻译开放平台 (fanyi-api.baidu.com) → 注册 → 创建应用 → 获取 App ID 和 Secret Key
-          </p>
-        </div>
-
-        <div className="border-t border-border-subtle" />
-
-        {/* Youdao Translate */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', isYoudaoConfiguredState ? 'bg-accent-green' : 'bg-text-muted/40')} />
-              <span className="text-sm text-text-secondary">网易有道</span>
-            </div>
-            <span className={cn('text-xs px-2 py-0.5 rounded-full', isYoudaoConfiguredState ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-elevated text-text-muted')}>
-              {isYoudaoConfiguredState ? '已配置' : '未配置'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="youdao-app-key" className="text-xs font-medium text-text-secondary">App Key</label>
-              <input
-                id="youdao-app-key" type="text" value={youdaoAppKey}
-                onChange={(e) => { setYoudaoAppKeyState(e.target.value); setIsYoudaoConfiguredState(false) }}
-                placeholder="有道 App Key"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="youdao-app-secret" className="text-xs font-medium text-text-secondary">App Secret</label>
-              <input
-                id="youdao-app-secret" type="password" value={youdaoAppSecret}
-                onChange={(e) => { setYoudaoAppSecretState(e.target.value); setIsYoudaoConfiguredState(false) }}
-                placeholder="应用密钥"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-          </div>
-          <button onClick={handleSaveYoudao} disabled={isYoudaoSaving} className={cn('px-4 py-2 rounded-[8px] text-sm font-medium transition-all duration-200 bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed')}>
-            {isYoudaoSaving ? '保存中...' : '保存'}
-          </button>
-          <p className="text-[10px] text-text-muted leading-relaxed">
-            获取：有道智云 AI 开放平台 (ai.youdao.com) → 注册 → 创建应用 → 获取 App Key 和 App Secret
-          </p>
-        </div>
-
-        <div className="border-t border-border-subtle" />
-
-        {/* Xunfei Translate */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', isXfConfiguredState ? 'bg-accent-green' : 'bg-text-muted/40')} />
-              <span className="text-sm text-text-secondary">讯飞翻译</span>
-            </div>
-            <span className={cn('text-xs px-2 py-0.5 rounded-full', isXfConfiguredState ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-elevated text-text-muted')}>
-              {isXfConfiguredState ? '已配置' : '未配置'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="xf-api-key" className="text-xs font-medium text-text-secondary">API Key</label>
-              <input
-                id="xf-api-key" type="text" value={xfApiKey}
-                onChange={(e) => { setXfApiKeyState(e.target.value); setIsXfConfiguredState(false) }}
-                placeholder="讯飞 API Key"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="xf-api-secret" className="text-xs font-medium text-text-secondary">API Secret</label>
-              <input
-                id="xf-api-secret" type="password" value={xfApiSecret}
-                onChange={(e) => { setXfApiSecretState(e.target.value); setIsXfConfiguredState(false) }}
-                placeholder="API Secret"
-                className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
-              />
-            </div>
-          </div>
-          <button onClick={handleSaveXf} disabled={isXfSaving} className={cn('px-4 py-2 rounded-[8px] text-sm font-medium transition-all duration-200 bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed')}>
-            {isXfSaving ? '保存中...' : '保存'}
-          </button>
-          <p className="text-[10px] text-text-muted leading-relaxed">
-            获取：讯飞开放平台 (xfyun.cn) → 注册 → 创建应用 → 机器翻译（新）→ 获取 API Key 和 API Secret
-          </p>
-        </div>
-
-        {/* Test area */}
-        <div className="border-t border-border-subtle pt-4 space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-text-muted">测试翻译：</span>
-            <div className="flex flex-wrap gap-1">
-              {SERVICES.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setActiveService(s.key)}
-                  className={cn(
-                    'px-3 py-1 rounded-[6px] text-xs font-medium transition-all duration-200',
-                    activeService === s.key ? 'bg-accent-green text-bg-primary' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'
-                  )}
-                >
-                  {s.icon} {s.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={handleTestTranslation}
-              disabled={isTesting || !isConfigured(activeService)}
-              className={cn('px-3 py-1 rounded-[6px] text-xs font-medium transition-all duration-200 border border-border-subtle text-text-secondary hover:text-accent-green hover:border-accent-green disabled:opacity-40 disabled:cursor-not-allowed')}
+          return (
+            <ServiceCard
+              key={meta.key}
+              meta={meta}
+              isConfigured={configured}
+              isEnabled={isEnabled}
+              onToggle={handleToggle}
+              onExpand={handleExpand}
+              expanded={expanded}
             >
-              {isTesting ? '测试中...' : '测试翻译'}
-            </button>
-          </div>
+              {/* Google credentials */}
+              {meta.key === 'google' && (
+                <div className="space-y-2">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor={`${meta.key}-api-key`} className="text-xs font-medium text-text-secondary">API Key</label>
+                    <input
+                      id={`${meta.key}-api-key`} type="password" value={googleApiKey}
+                      onChange={(e) => setGoogleApiKeyState(e.target.value)}
+                      placeholder="输入 Google Cloud API Key"
+                      className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave('google')}
+                      disabled={savingKey === 'google'}
+                      className="px-4 py-2 rounded-[8px] text-sm font-medium bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {savingKey === 'google' ? '保存中...' : '保存'}
+                    </button>
+                    {configured && (
+                      <button
+                        onClick={() => handleTest('google')}
+                        disabled={testKey === 'google'}
+                        className="px-4 py-2 rounded-[8px] text-sm font-medium border border-border-subtle text-text-secondary hover:text-accent-green hover:border-accent-green disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {testKey === 'google' ? '测试中...' : '测试'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-muted leading-relaxed">
+                    获取：Google Cloud Console → API 和服务 → 凭据 → 创建 API 密钥
+                  </p>
+                </div>
+              )}
 
-          {testResult && (
-            <div className={cn('px-3 py-2 rounded-[8px] text-sm', testResult.success ? 'bg-accent-green/10 text-accent-green' : 'bg-danger/10 text-danger')}>
-              {testResult.message}
-            </div>
-          )}
-        </div>
+              {/* Baidu credentials */}
+              {meta.key === 'baidu' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-app-id`} className="text-xs font-medium text-text-secondary">App ID</label>
+                      <input
+                        id={`${meta.key}-app-id`} type="text" value={baiduAppId}
+                        onChange={(e) => setBaiduAppIdState(e.target.value)}
+                        placeholder="百度 App ID"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-secret`} className="text-xs font-medium text-text-secondary">Secret Key</label>
+                      <input
+                        id={`${meta.key}-secret`} type="password" value={baiduSecretKey}
+                        onChange={(e) => setBaiduSecretKeyState(e.target.value)}
+                        placeholder="安全码"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave('baidu')}
+                      disabled={savingKey === 'baidu'}
+                      className="px-4 py-2 rounded-[8px] text-sm font-medium bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {savingKey === 'baidu' ? '保存中...' : '保存'}
+                    </button>
+                    {configured && (
+                      <button
+                        onClick={() => handleTest('baidu')}
+                        disabled={testKey === 'baidu'}
+                        className="px-4 py-2 rounded-[8px] text-sm font-medium border border-border-subtle text-text-secondary hover:text-accent-green hover:border-accent-green disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {testKey === 'baidu' ? '测试中...' : '测试'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-muted leading-relaxed">
+                    获取：百度翻译开放平台 (fanyi-api.baidu.com) → 注册 → 创建应用 → 获取 App ID 和 Secret Key
+                  </p>
+                </div>
+              )}
+
+              {/* Youdao credentials */}
+              {meta.key === 'youdao' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-app-key`} className="text-xs font-medium text-text-secondary">App Key</label>
+                      <input
+                        id={`${meta.key}-app-key`} type="text" value={youdaoAppKey}
+                        onChange={(e) => setYoudaoAppKeyState(e.target.value)}
+                        placeholder="有道 App Key"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-secret`} className="text-xs font-medium text-text-secondary">App Secret</label>
+                      <input
+                        id={`${meta.key}-secret`} type="password" value={youdaoAppSecret}
+                        onChange={(e) => setYoudaoAppSecretState(e.target.value)}
+                        placeholder="应用密钥"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave('youdao')}
+                      disabled={savingKey === 'youdao'}
+                      className="px-4 py-2 rounded-[8px] text-sm font-medium bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {savingKey === 'youdao' ? '保存中...' : '保存'}
+                    </button>
+                    {configured && (
+                      <button
+                        onClick={() => handleTest('youdao')}
+                        disabled={testKey === 'youdao'}
+                        className="px-4 py-2 rounded-[8px] text-sm font-medium border border-border-subtle text-text-secondary hover:text-accent-green hover:border-accent-green disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {testKey === 'youdao' ? '测试中...' : '测试'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-muted leading-relaxed">
+                    获取：有道智云 AI 开放平台 (ai.youdao.com) → 注册 → 创建应用 → 获取 App Key 和 App Secret
+                  </p>
+                </div>
+              )}
+
+              {/* Xunfei credentials */}
+              {meta.key === 'xf' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-api-key`} className="text-xs font-medium text-text-secondary">API Key</label>
+                      <input
+                        id={`${meta.key}-api-key`} type="text" value={xfApiKey}
+                        onChange={(e) => setXfApiKeyState(e.target.value)}
+                        placeholder="讯飞 API Key"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor={`${meta.key}-secret`} className="text-xs font-medium text-text-secondary">API Secret</label>
+                      <input
+                        id={`${meta.key}-secret`} type="password" value={xfApiSecret}
+                        onChange={(e) => setXfApiSecretState(e.target.value)}
+                        placeholder="API Secret"
+                        className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSave('xf')}
+                      disabled={savingKey === 'xf'}
+                      className="px-4 py-2 rounded-[8px] text-sm font-medium bg-accent-green text-bg-primary hover:bg-accent-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {savingKey === 'xf' ? '保存中...' : '保存'}
+                    </button>
+                    {configured && (
+                      <button
+                        onClick={() => handleTest('xf')}
+                        disabled={testKey === 'xf'}
+                        className="px-4 py-2 rounded-[8px] text-sm font-medium border border-border-subtle text-text-secondary hover:text-accent-green hover:border-accent-green disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {testKey === 'xf' ? '测试中...' : '测试'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-muted leading-relaxed">
+                    获取：讯飞开放平台 (xfyun.cn) → 注册 → 创建应用 → 机器翻译（新）→ 获取 API Key 和 API Secret
+                  </p>
+                </div>
+              )}
+
+              {/* Result feedback */}
+              {result && (
+                <div className={cn(
+                  'mt-1 px-3 py-2 rounded-[8px] text-xs',
+                  result.success ? 'bg-accent-green/10 text-accent-green' : 'bg-danger/10 text-danger'
+                )}>
+                  {result.message}
+                </div>
+              )}
+            </ServiceCard>
+          )
+        })}
       </div>
     </div>
   )
