@@ -226,10 +226,16 @@ export default function Study() {
 
   const calendarDays = buildCalendarDays(currentYear, currentMonth, selectedDate)
 
-  // Selected day's tasks
+  // Selected day's tasks - ALL tasks (both pending and completed), completed first
   const selectedDayTasks = useMemo(
-    () => MAY_TASKS.filter((t) => t.date === selectedDate),
-    [selectedDate]
+    () => MAY_TASKS.filter((t) => t.date === selectedDate)
+      .sort((a, b) => {
+        const aDone = completedIds.has(a.id)
+        const bDone = completedIds.has(b.id)
+        if (aDone === bDone) return 0
+        return aDone ? -1 : 1 // completed first
+      }),
+    [selectedDate, completedIds]
   )
   const dayPending = selectedDayTasks.filter((t) => !completedIds.has(t.id))
   const dayCompleted = selectedDayTasks.filter((t) => completedIds.has(t.id))
@@ -449,52 +455,61 @@ export default function Study() {
               </div>
             )}
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-              {dayPending.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={() => toggleTask(task.id)}
-                  className={cn(
-                    'rounded-[10px] p-3 cursor-pointer transition-all duration-200 hover:bg-bg-elevated',
-                    'border-l-2 border-l-border-subtle'
-                  )}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="w-4 h-4 rounded-[4px] border border-border-accent flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{CAT_ICONS[task.category]}</span>
-                        <span className="text-xs text-text-primary">{task.title}</span>
+            {/* All tasks: completed first, then pending */}
+            <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+              {selectedDayTasks.map((task) => {
+                const done = completedIds.has(task.id)
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => toggleTask(task.id)}
+                    className={cn(
+                      'rounded-[10px] p-3 cursor-pointer transition-all duration-200 hover:bg-bg-elevated',
+                      done
+                        ? 'bg-accent-green/5 border-l-2 border-l-accent-green'
+                        : 'border-l-2 border-l-border-subtle'
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      {/* Checkbox */}
+                      <div
+                        className={cn(
+                          'w-4 h-4 rounded-[4px] flex-shrink-0 mt-0.5 flex items-center justify-center transition-all duration-200',
+                          done
+                            ? 'bg-accent-green border-accent-green'
+                            : 'border border-border-accent'
+                        )}
+                      >
+                        {done && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5L4.5 7.5L8 2.5" stroke="#0f1a12" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
                       </div>
-                      <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full inline-block mt-1', PRIORITY_BG[task.priority])}>
-                        {PRIORITY_LABEL[task.priority]}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{CAT_ICONS[task.category]}</span>
+                          <span className={cn(
+                            'text-xs transition-all duration-200',
+                            done ? 'text-text-muted line-through' : 'text-text-primary'
+                          )}>
+                            {task.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full', PRIORITY_BG[task.priority])}>
+                            {PRIORITY_LABEL[task.priority]}
+                          </span>
+                          {done && (
+                            <span className="text-[10px] text-accent-green">已完成</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-
-            {dayCompleted.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border-subtle">
-                <p className="text-[11px] text-text-muted mb-2">已完成 {dayCompleted.length} 项</p>
-                <div className="space-y-1.5">
-                  {dayCompleted.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => toggleTask(task.id)}
-                      className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-text-secondary transition-colors line-through"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2 6L5 9L10 3" stroke="#6ec56e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span>{CAT_ICONS[task.category]}</span>
-                      <span className="truncate">{task.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </Card>
 
           {/* Week Plan */}
