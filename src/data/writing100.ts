@@ -1,0 +1,125 @@
+// ─── 写作 100 句翻译练习 ─────────────────────────────────────────────────
+// 数据来源：https://github.com/hefengxian/my-ielts
+// 顾家北手把手教你雅思写作 V6.0 核心句子翻译
+
+export interface WritingSentence {
+  no: number | null
+  title?: string    // 分类标题（如 "简单的主谓宾结构"）
+  sentence?: string  // 中文句子（分类标题行无此字段）
+  translationFromBook?: string  // 书中参考译文
+  chatgpt?: string  // ChatGPT 译文（对比参考）
+  remark?: string  // 备注语法点
+}
+
+// 分类标题行（no=null, title 存在，sentence/translationFromBook 不存在）
+
+export const WRITING_100: WritingSentence[] = [
+  { no: null, title: '简单的主谓宾结构' },
+  { no: 1, sentence: '经常做运动会提高人的自信', translationFromBook: "Regular exercise can increase one's self-confidence", remark: '' },
+  { no: 2, sentence: '教学质量对学生成绩有很大的影响', translationFromBook: "The quality of teaching can make huge difference to students' academic performance", chatgpt: "Academic achievement is heavily dependent on the quality of teaching", remark: 'make huge difference vs heavily dependent' },
+  { no: 3, sentence: '家长和老师应该努力去减少小孩子看电视的时间', translationFromBook: "Parents and teachers should make an effort to limit children's screen time", chatgpt: "Parents and teachers should make efforts to reduce the screen time of children", remark: 'effort (单数) vs efforts (复数)' },
+  { no: 4, sentence: '经济的下滑导致失业率的上升', translationFromBook: "The economic slowdown has led to a climbing unemployment rate.", chatgpt: "The economic slowdown has led to an increase in the unemployment rate", remark: 'climbing = increase 本身有名词词性' },
+  { no: 5, sentence: '经济的发展需要年轻的劳动者', translationFromBook: "A country's economic development relies on a supply of young workers", chatgpt: "Economic development requires young laborers", remark: 'labors vs laborers: 前者侧重劳动行为或劳动力总称，后者专指从事劳动的人' },
+  { no: 6, sentence: '工作量大的人没有时间去休息', translationFromBook: "People with a heavy workload do not have adequate time to rest", chatgpt: "People with heavy workloads often don't have time to rest", remark: 'adequate adj. 足够的，合格的。反义词 inadequate' },
+  { no: 7, sentence: '在中国很多学生都要上晚自习', translationFromBook: "In China, many students have to attend evening self-study sessions", chatgpt: "In China, many students attend evening study sessions", remark: '' },
+  { no: 8, sentence: '政府应该增加对公共设施的投入', translationFromBook: "Governments should increase investment in public facilities", remark: '' },
+  { no: 9, sentence: '电视和广播会对人们的思想和行为产生影响', translationFromBook: "Television and radio can influence people's thoughts and behavior", chatgpt: "Television and radio influence people's thoughts and behaviors", remark: '' },
+  { no: 10, sentence: '科技的发展使人们的生活更加便利', translationFromBook: "The development of technology has made people's life more convenient", remark: '' },
+  { no: 11, sentence: '污染会对人们的健康产生威胁', translationFromBook: "Pollution poses a threat to people's health", chatgpt: "Pollution threatens people's health", remark: '' },
+  { no: 12, sentence: '人们越来越意识到保护环境的重要性', translationFromBook: "People are increasingly aware of the importance of protecting the environment", remark: '' },
+  { no: 13, sentence: '旅游业可以促进当地经济的发展', translationFromBook: "Tourism can boost the local economy", chatgpt: "Tourism can promote local economic development", remark: '' },
+  { no: 14, sentence: '人口增长给城市带来了巨大的压力', translationFromBook: "Population growth has put enormous pressure on cities", remark: '' },
+  { no: 15, sentence: '交通拥堵是很多大城市面临的主要问题', translationFromBook: "Traffic congestion is a major problem in many big cities", remark: '' },
+  { no: 16, sentence: '网上购物正在变得越来越流行', translationFromBook: "Online shopping is becoming increasingly popular", chatgpt: "Online shopping is increasingly popular", remark: '' },
+  { no: 17, sentence: '广告可以帮助企业推销产品', translationFromBook: "Advertising can help companies promote their products", chatgpt: "Advertising helps companies market their products", remark: '' },
+  { no: 18, sentence: '年轻人通常更喜欢住在城市里', translationFromBook: "Young people usually prefer to live in cities", remark: '' },
+  { no: 19, sentence: '孩子的教育需要学校和家庭的共同努力', translationFromBook: "Children's education requires joint efforts from schools and families", remark: '' },
+  { no: 20, sentence: '读书可以帮助人们获取知识', translationFromBook: "Reading helps people acquire knowledge", chatgpt: "Reading helps people gain knowledge", remark: 'acquire vs gain: acquire 更正式，强调通过努力获得' },
+  { no: 21, title: '主谓宾 + 介词短语' },
+  { no: 22, sentence: '政府应该对污染企业征收更多的税', translationFromBook: "Governments should impose higher taxes on polluting enterprises", remark: 'impose tax on 是固定搭配' },
+  { no: 23, sentence: '父母不应该让孩子沉迷于电脑游戏', translationFromBook: "Parents should not allow children to be obsessed with video games", chatgpt: "Parents should not let children become addicted to video games", remark: 'be obsessed with vs become addicted to' },
+  { no: 24, sentence: '政府对公共交通的投资有利于环境的改善', translationFromBook: "Government investment in public transport is beneficial to environmental improvement", chatgpt: "Government investment in public transportation benefits the environment", remark: '' },
+  { no: 25, sentence: '广告可以让消费者了解新产品', translationFromBook: "Advertising can inform consumers about new products", chatgpt: "Advertising informs consumers about new products", remark: 'inform sb about sth 是正式表达' },
+  { no: 26, sentence: '自然灾害对人们的生命财产安全造成了威胁', translationFromBook: "Natural disasters pose a threat to people's lives and property", remark: '' },
+  { no: 27, sentence: '互联网使人们可以更加便捷地获取信息', translationFromBook: "The internet has enabled people to access information more conveniently", chatgpt: "The internet enables people to access information more easily", remark: 'conveniently vs easily 可以互换' },
+  { no: 28, sentence: '大学教育可以为学生将来的就业做准备', translationFromBook: "University education can prepare students for future employment", chatgpt: "University education prepares students for future careers", remark: '' },
+  { no: 29, sentence: '图书馆应该为所有人提供免费服务', translationFromBook: "Libraries should provide free services for everyone", remark: '' },
+  { no: 30, sentence: '电视上的暴力内容会对孩子的心理产生不良影响', translationFromBook: "Violent content on television can have a negative impact on children's psychology", chatgpt: "Violent TV content can negatively affect children's mental development", remark: 'negative impact on vs negatively affect' },
+  { no: 31, title: '主谓宾 + 宾补（名词/形容词）' },
+  { no: 32, sentence: '大学教育使年轻人变得更有竞争力', translationFromBook: "University education makes young people more competitive", chatgpt: "Tertiary education makes young people more competitive", remark: '' },
+  { no: 33, sentence: '城市居民发现住在乡下也很舒适', translationFromBook: "City dwellers find it comfortable to live in the countryside", remark: 'find it + adj. + to do' },
+  { no: 34, sentence: '很多人认为广告让消费者买到更好的产品', translationFromBook: "Many people believe that advertising helps consumers buy better products", remark: '' },
+  { no: 35, sentence: '使用公共交通可以减少空气污染', translationFromBook: "Using public transport can reduce air pollution", remark: '动名词做主语' },
+  { no: 36, sentence: '技术的发展使远程工作成为可能', translationFromBook: "Technological development has made remote work possible", chatgpt: "Advances in technology have made working remotely possible", remark: 'advances in vs development of' },
+  { no: 37, title: '主谓宾 + that 从句' },
+  { no: 38, sentence: '科学家认为气候变化与人类活动有关', translationFromBook: "Scientists believe that climate change is related to human activities", chatgpt: "Scientists believe climate change is linked to human activity", remark: 'related to vs linked to vs associated with' },
+  { no: 39, sentence: '研究表明儿童过多使用电子设备会影响视力', translationFromBook: "Research shows that excessive use of electronic devices can affect children's eyesight", remark: '' },
+  { no: 40, sentence: '很多人相信经济发展会提高人们的生活质量', translationFromBook: "Many people believe that economic development can improve people's quality of life", remark: '' },
+  { no: 41, title: 'There be 句型' },
+  { no: 42, sentence: '很多城市都有交通拥堵的问题', translationFromBook: "There is a problem of traffic congestion in many cities", chatgpt: "Many cities suffer from traffic congestion", remark: 'There be vs suffer from 可以互换' },
+  { no: 43, sentence: '过去十年里出现了许多新的工作岗位', translationFromBook: "There have been many new job opportunities in the past decade", remark: '' },
+  { no: 44, sentence: '有很多因素会影响孩子的学习成绩', translationFromBook: "There are many factors that can affect children's academic performance", remark: '' },
+  { no: 45, title: 'It is + adj. + for sb. + to do' },
+  { no: 46, sentence: '对政府来说解决交通拥堵问题很困难', translationFromBook: "It is difficult for governments to solve the problem of traffic congestion", remark: '' },
+  { no: 47, sentence: '对年轻人来说找到满意的工作很重要', translationFromBook: "It is important for young people to find satisfying jobs", remark: '' },
+  { no: 48, sentence: '对学生来说接受大学教育很有价值', translationFromBook: "It is valuable for students to receive university education", remark: '' },
+  { no: 49, sentence: '对儿童来说玩户外游戏比玩电子游戏更健康', translationFromBook: "It is healthier for children to play outdoor games than to play video games", remark: '' },
+  { no: 50, title: '比较级句型' },
+  { no: 51, sentence: '骑自行车比开车更环保', translationFromBook: "Riding a bicycle is more environmentally friendly than driving a car", remark: '' },
+  { no: 52, sentence: '住在城市比住在乡下有更多的就业机会', translationFromBook: "Living in cities provides more job opportunities than living in the countryside", chatgpt: "Living in cities offers more employment opportunities than living in rural areas", remark: '' },
+  { no: 53, sentence: '电视比报纸更能生动地传递信息', translationFromBook: "Television can convey information more vividly than newspapers", remark: '' },
+  { no: 54, sentence: '大学教育比中学教育更重要', translationFromBook: "Tertiary education is more important than secondary education", remark: '' },
+  { no: 55, sentence: '保护环境比经济发展更重要', translationFromBook: "Protecting the environment is more important than economic development", remark: '优先级表达：prioritizing A over B' },
+  { no: 56, title: '原因结果句型' },
+  { no: 57, sentence: '由于空气污染严重，越来越多的人患上了呼吸系统疾病', translationFromBook: "Because of severe air pollution, an increasing number of people suffer from respiratory diseases", chatgpt: "Due to severe air pollution, more and more people suffer from respiratory diseases", remark: 'because of vs due to' },
+  { no: 58, sentence: '因为人们长时间使用电子设备，他们的视力在下降', translationFromBook: "Because people use electronic devices for long periods, their eyesight is declining", remark: '' },
+  { no: 59, sentence: '随着人口增长，城市面临越来越大的交通压力', translationFromBook: "With the growth of population, cities are facing increasing traffic pressure", chatgpt: "As the population grows, cities face mounting traffic pressure", remark: 'with + n. vs as + clause' },
+  { no: 60, sentence: '由于滥用化肥，土壤污染变得越来越严重', translationFromBook: "Due to the overuse of chemical fertilizers, soil pollution is becoming increasingly severe", remark: '' },
+  { no: 61, title: 'While / Although / Despite / In spite of 句型' },
+  { no: 62, sentence: '虽然广告可以帮助企业销售产品，但它也可能误导消费者', translationFromBook: "Although advertising can help companies sell products, it may also mislead consumers", remark: '' },
+  { no: 63, sentence: '尽管经济发展带来了很多好处，但也造成了一些负面影响', translationFromBook: "Despite the benefits brought by economic development, it has also caused some negative impacts", chatgpt: "While economic development has brought many benefits, it has also created some negative effects", remark: '' },
+  { no: 64, sentence: '尽管在线学习很方便，但它缺少课堂互动', translationFromBook: "Despite the convenience of online learning, it lacks classroom interaction", remark: '' },
+  { no: 65, sentence: '虽然很多学生觉得学英语很难，但他们仍在努力学习', translationFromBook: "Although many students find learning English difficult, they are still working hard", remark: '' },
+  { no: 66, title: '被动语态' },
+  { no: 67, sentence: '很多传统手艺正在逐渐失传', translationFromBook: "Many traditional crafts are gradually being lost", remark: '正在被...' },
+  { no: 68, sentence: '公共场所禁止吸烟已经被写入法律', translationFromBook: "Smoking in public places has been banned by law", remark: '已经...被...' },
+  { no: 69, sentence: '新能源正在被广泛使用', translationFromBook: "New energy is being widely used", remark: '' },
+  { no: 70, sentence: '这部小说已经被翻译成多种语言', translationFromBook: "This novel has been translated into many languages", remark: '' },
+  { no: 71, title: '定语从句' },
+  { no: 72, sentence: '那些在工厂工作的人容易患上呼吸系统疾病', translationFromBook: "People who work in factories are prone to respiratory diseases", remark: 'be prone to = 容易...' },
+  { no: 73, sentence: '我赞同那些认为应该保护环境的人的观点', translationFromBook: "I agree with the viewpoint of those who believe that the environment should be protected", remark: '' },
+  { no: 74, sentence: '电视上的广告会影响孩子的消费观', translationFromBook: "Television advertisements can affect children's views on consumption", remark: '' },
+  { no: 75, sentence: '大学毕业生找工作时面临着激烈的竞争', translationFromBook: "University graduates face fierce competition when searching for jobs", remark: '' },
+  { no: 76, title: '名词性从句（What 开头）' },
+  { no: 77, sentence: '父母应该关注孩子真正需要的是什么', translationFromBook: "Parents should focus on what children really need", remark: '' },
+  { no: 78, sentence: '政府需要了解公众对公共交通的真实态度', translationFromBook: "Governments need to understand what the public really thinks about public transport", remark: '' },
+  { no: 79, title: '倒装 / 虚拟语气' },
+  { no: 80, sentence: '如果我们不立即采取行动，环境问题将会更加严重', translationFromBook: "If we do not take action immediately, environmental problems will become more serious", remark: '真实条件句' },
+  { no: 81, sentence: '如果人们更加注意保护环境，地球将会变得更加美好', translationFromBook: "If people paid more attention to protecting the environment, the Earth would become a better place", remark: '虚拟语气（与现在事实相反）' },
+  { no: 82, title: '高分表达集合' },
+  { no: 83, sentence: '科技发展使信息传播速度显著提升', translationFromBook: "Technological advancement has significantly accelerated the speed of information dissemination", remark: '' },
+  { no: 84, sentence: '毫无疑问，保护濒危物种刻不容缓', translationFromBook: "There is no doubt that protecting endangered species is a matter of great urgency", remark: 'There is no doubt that = 毫无疑问' },
+  { no: 85, sentence: '从长远来看，可再生能源的使用对可持续发展至关重要', translationFromBook: "In the long run, the use of renewable energy is crucial for sustainable development", remark: 'In the long run = 从长远来看' },
+  { no: 86, sentence: '教育投身的增加会带来长期的社会效益', translationFromBook: "An increase in investment in education will yield long-term social benefits", remark: 'yield = 产生，带来' },
+  { no: 87, sentence: '交通拥堵问题亟需系统性的解决方案', translationFromBook: "The problem of traffic congestion urgently requires a systematic solution", remark: 'urgently requires = 亟需' },
+  { no: 88, sentence: '公众对健康生活方式的意识正在逐步提升', translationFromBook: "Public awareness of a healthy lifestyle is gradually increasing", remark: '' },
+  { no: 89, sentence: '跨文化交流有助于增进不同国家之间的理解', translationFromBook: "Cross-cultural communication helps enhance mutual understanding between different countries", remark: 'mutual understanding = 相互理解' },
+  { no: 90, sentence: '传统工业向高新技术转型是必然趋势', translationFromBook: "The transition of traditional industries to high-tech is an inevitable trend", remark: 'inevitable = 必然的' },
+  { no: 91, sentence: '文化遗产的保护需要政府与公众的共同努力', translationFromBook: "The protection of cultural heritage requires joint efforts from the government and the public", remark: '' },
+  { no: 92, sentence: '经济全球化带来机遇的同时也伴随挑战', translationFromBook: "Economic globalization brings opportunities as well as challenges", remark: 'as well as = 同时，也' },
+  { no: 93, sentence: '数据表明青少年使用社交媒体的时间呈上升趋势', translationFromBook: "Data shows that the time teenagers spend on social media is on the rise", remark: 'on the rise = 上升趋势' },
+  { no: 94, sentence: '生活质量不仅取决于经济发展，也取决于社会福利', translationFromBook: "Quality of life depends not only on economic development but also on social welfare", remark: 'not only...but also...' },
+  { no: 95, sentence: '面对气候变化，没有人可以独善其身', translationFromBook: "In the face of climate change, no one can afford to stay aloof", remark: 'in the face of = 面对；afford to = 能承受（做某事）' },
+  { no: 96, sentence: '解决城市拥堵问题需要多管齐下的策略', translationFromBook: "Solving the problem of urban congestion requires a multi-pronged strategy", remark: 'multi-pronged = 多管齐下的' },
+  { no: 97, sentence: '过度依赖电子设备可能削弱人们的独立思考能力', translationFromBook: "Over-reliance on electronic devices may undermine people's ability to think independently", remark: 'over-reliance = 过度依赖；undermine = 削弱' },
+  { no: 98, sentence: '教育资源的不均衡分配加剧了社会不平等', translationFromBook: "The unequal distribution of educational resources has exacerbated social inequality", remark: 'exacerbated = 加剧；inequality = 不平等' },
+  { no: 99, sentence: '通过政策引导推动绿色生活方式是可行之路', translationFromBook: "Promoting a green lifestyle through policy guidance is a viable approach", remark: 'viable = 可行的' },
+  { no: 100, sentence: '平衡经济发展与环境保护需要我们每个人的参与', translationFromBook: "Balancing economic development and environmental protection requires the participation of every individual", remark: '' },
+]
+
+export const WRITING_100_COUNT = WRITING_100.filter(s => s.no !== null).length
+
+// ─── 分类练习 ──────────────────────────────────────────────────────────
+export function getWritingCategories(): string[] {
+  return WRITING_100.filter(s => s.title).map(s => s.title!)
+}

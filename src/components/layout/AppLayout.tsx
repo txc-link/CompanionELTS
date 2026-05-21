@@ -24,6 +24,8 @@ import Speaking from '@/pages/Speaking'
 import Analytics from '@/pages/Analytics'
 import Achievements from '@/pages/Achievements'
 import Vocab from '@/pages/Vocab'
+import Listening179 from '@/pages/Listening179'
+import Reading538 from '@/pages/Reading538'
 import Leaderboard from '@/pages/Leaderboard'
 import DailyMessages from '@/pages/DailyMessages'
 import Square from '@/pages/Square'
@@ -120,6 +122,8 @@ export default function AppLayout() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/vocab" element={<Vocab />} />
+            <Route path="/listening179" element={<Listening179 />} />
+            <Route path="/reading538" element={<Reading538 />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/daily" element={<DailyMessages />} />
             <Route path="/square" element={<Square />} />

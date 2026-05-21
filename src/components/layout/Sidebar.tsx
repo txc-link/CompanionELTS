@@ -27,6 +27,13 @@ const navGroups = [
     ],
   },
   {
+    label: '考点词专项',
+    items: [
+      { to: '/reading538', label: '阅读 538', icon: 'r538' },
+      { to: '/listening179', label: '听力 179', icon: 'l179' },
+    ],
+  },
+  {
     label: '社交',
     items: [
       { to: '/leaderboard', label: '排行榜', icon: 'leaderboard' },
@@ -186,6 +193,23 @@ const iconMap: Record<string, React.ReactNode> = {
       <path d="M12.75 12.75L14.25 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       <path d="M3.75 13.5L5.25 12.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       <path d="M12.75 5.25L14.25 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  // 538 Reading keyword icon
+  r538: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2.25" y="3" width="13.5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="9" y="12" textAnchor="middle" fontSize="7" fontWeight="bold" fill="currentColor" fontFamily="monospace">538</text>
+    </svg>
+  ),
+  // 179 Listening keyword icon
+  l179: (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 2.25C6.10051 2.25 3.75 4.60051 3.75 7.5V10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M14.25 10.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <rect x="2.25" y="10.5" width="3" height="3.75" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="12.75" y="10.5" width="3" height="3.75" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="9" y="14.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="currentColor" fontFamily="monospace">179</text>
     </svg>
   ),
 }
