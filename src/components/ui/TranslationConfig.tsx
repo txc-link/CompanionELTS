@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getGoogleApiKey, setGoogleApiKey, translateWithGoogle } from '@/lib/translate'
-import { getBaiduAppId, setBaiduAppId, getBaiduSecretKey, setBaiduSecretKey, isBaiduConfigured, translateWithBaidu } from '@/lib/baiduTranslate'
+import { getBaiduApiKey, setBaiduApiKey, getBaiduSecretKey, setBaiduSecretKey, isBaiduConfigured, translateWithBaidu } from '@/lib/baiduTranslate'
 import { getYoudaoAppKey, setYoudaoAppKey, getYoudaoAppSecret, setYoudaoAppSecret, isYoudaoConfigured, translateWithYoudao } from '@/lib/youdaoTranslate'
 import { getXfApiKey, setXfApiKey, getXfApiSecret, setXfApiSecret, isXfConfigured, translateWithXf } from '@/lib/xfTranslate'
 import { cn } from '@/utils/cn'
@@ -140,7 +140,7 @@ function ServiceCard({
 export default function TranslationConfig({ className }: TranslationConfigProps) {
   // Credential states
   const [googleApiKey, setGoogleApiKeyState] = useState('')
-  const [baiduAppId, setBaiduAppIdState] = useState('')
+  const [baiduApiKey, setBaiduApiKeyState] = useState('')
   const [baiduSecretKey, setBaiduSecretKeyState] = useState('')
   const [youdaoAppKey, setYoudaoAppKeyState] = useState('')
   const [youdaoAppSecret, setYoudaoAppSecretState] = useState('')
@@ -158,7 +158,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
   useEffect(() => {
     try {
       setGoogleApiKeyState(getGoogleApiKey())
-      setBaiduAppIdState(getBaiduAppId())
+      setBaiduApiKeyState(getBaiduApiKey())
       setBaiduSecretKeyState(getBaiduSecretKey())
       setYoudaoAppKeyState(getYoudaoAppKey())
       setYoudaoAppSecretState(getYoudaoAppSecret())
@@ -170,7 +170,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
 
   const isConfigured = (key: ServiceKey) => {
     if (key === 'google') return !!googleApiKey
-    if (key === 'baidu') return !!(baiduAppId && baiduSecretKey)
+    if (key === 'baidu') return !!(baiduApiKey && baiduSecretKey)
     if (key === 'youdao') return !!(youdaoAppKey && youdaoAppSecret)
     if (key === 'xf') return !!(xfApiKey && xfApiSecret)
     return false
@@ -193,7 +193,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
     setTestResult(null)
     try {
       if (key === 'google') setGoogleApiKey(googleApiKey.trim())
-      if (key === 'baidu') { setBaiduAppId(baiduAppId.trim()); setBaiduSecretKey(baiduSecretKey.trim()) }
+      if (key === 'baidu') { setBaiduApiKey(baiduApiKey.trim()); setBaiduSecretKey(baiduSecretKey.trim()) }
       if (key === 'youdao') { setYoudaoAppKey(youdaoAppKey.trim()); setYoudaoAppSecret(youdaoAppSecret.trim()) }
       if (key === 'xf') { setXfApiKey(xfApiKey.trim()); setXfApiSecret(xfApiSecret.trim()) }
       setTestResult({ key, success: true, message: '凭证已保存' })
@@ -203,7 +203,7 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
       setSavingKey(null)
       setTimeout(() => setTestResult(null), 3000)
     }
-  }, [googleApiKey, baiduAppId, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret])
+  }, [googleApiKey, baiduApiKey, baiduSecretKey, youdaoAppKey, youdaoAppSecret, xfApiKey, xfApiSecret])
 
   const handleTest = useCallback(async (key: ServiceKey) => {
     setTestKey(key)
@@ -291,11 +291,11 @@ export default function TranslationConfig({ className }: TranslationConfigProps)
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col gap-1">
-                      <label htmlFor={`${meta.key}-app-id`} className="text-xs font-medium text-text-secondary">App ID</label>
+                      <label htmlFor={`${meta.key}-app-id`} className="text-xs font-medium text-text-secondary">API Key</label>
                       <input
-                        id={`${meta.key}-app-id`} type="text" value={baiduAppId}
-                        onChange={(e) => setBaiduAppIdState(e.target.value)}
-                        placeholder="百度 App ID"
+                        id={`${meta.key}-app-id`} type="text" value={baiduApiKey}
+                        onChange={(e) => setBaiduApiKeyState(e.target.value)}
+                        placeholder="百度 API Key"
                         className="w-full rounded-[8px] border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/60 outline-none focus:border-accent-green transition-all duration-200"
                       />
                     </div>
