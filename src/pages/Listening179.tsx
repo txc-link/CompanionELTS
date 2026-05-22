@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LISTENING_179, getAudioPath, type Listening179Word } from '@/data/listening179'
+import { speakWord } from '@/lib/speech'
 
 // ─── Types ─────────────────────────────────────────────────────────────
 interface PracticeItem extends Listening179Word {
@@ -13,10 +14,16 @@ interface PracticeItem extends Listening179Word {
 
 // ─── Helper ─────────────────────────────────────────────────────────────
 function playAudio(word: string) {
+  // 优先使用 Web Speech API（无需下载音频文件）
+  try {
+    speakWord(word)
+    return
+  } catch (_) {
+    // Fallback: try audio file
+  }
   const path = getAudioPath(word)
   const audio = new Audio(path)
   audio.play().catch(() => {
-    // Fallback: try with space replaced by underscore
     const fallback = new Audio(path.replace(/ /g, '_'))
     fallback.play().catch(() => {})
   })

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { useVocabTaskStore } from '@/store'
 import type { SimpleRating } from '@/lib/dictionary'
 import { IELTS_LEXICON, getChapterList, type LexiconWord } from '@/data/ieltsLexicon'
+import { speakWord, speakSentence } from '@/lib/speech'
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type ViewMode = 'chapters' | 'chapter' | 'flashcard' | 'practice'
@@ -83,16 +84,23 @@ function FlashcardCard({
         <span className="text-xs text-text-muted whitespace-nowrap">{index + 1}/{total}</span>
       </div>
 
-      {/* Audio button */}
-      <button
-        onClick={() => {
-          const audio = new Audio(`/vocabulary/audio/${chapterId}/${word.word[0]}.mp3`)
-          audio.play().catch(() => {})
-        }}
-        className="text-xs text-text-muted hover:text-accent-green flex items-center gap-1 cursor-pointer"
-      >
-        🔊 听发音
-      </button>
+      {/* 🔊 发音按钮（Web Speech API，无需下载音频） */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => speakWord(word.word[0])}
+          className="text-xs text-accent-green hover:text-accent-green/80 flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          🔊 发音
+        </button>
+        {word.example && word.example !== '-' && (
+          <button
+            onClick={() => speakSentence(word.example)}
+            className="text-xs text-text-muted hover:text-info flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            📝 例句
+          </button>
+        )}
+      </div>
 
       {/* Card */}
       <div
@@ -613,12 +621,9 @@ export default function Vocab() {
                             <td className="p-3">
                               <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => {
-                                    const audio = new Audio(`/vocabulary/audio/${activeChapterId}/${word.word[0]}.mp3`)
-                                    audio.play().catch(() => {})
-                                  }}
-                                  className="text-text-muted hover:text-accent-green cursor-pointer"
-                                  title="播放发音"
+                                  onClick={() => speakWord(word.word[0])}
+                                  className="text-text-muted hover:text-accent-green cursor-pointer transition-colors"
+                                  title="点击朗读发音（Web Speech API）"
                                 >
                                   🔊
                                 </button>

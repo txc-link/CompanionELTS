@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { READING_538, searchReading538, type Reading538Word } from '@/data/reading538'
+import { speakWord, speakSentence } from '@/lib/speech'
 
 // ─── Types ─────────────────────────────────────────────────────────────
 interface PracticeItem extends Reading538Word {
@@ -191,18 +192,27 @@ export default function Reading538() {
                   </td>
                   <td className="px-4 py-3">
                     {mode === 'browse' ? (
-                      <div className="flex flex-wrap gap-1">
-                        {item.replaces.map((r, ri) => (
-                          <a
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => speakWord(item.word.replace('*', ''))}
+                          className="text-text-muted hover:text-accent-green cursor-pointer transition-colors text-sm"
+                          title="点击朗读"
+                        >
+                          🔊
+                        </button>
+                        {item.replaces.slice(0, 2).map((r, ri) => (
+                          <button
                             key={ri}
-                            href={`https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${r}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2 py-0.5 rounded-full bg-info/10 text-info text-xs hover:bg-info/20 transition-colors"
+                            onClick={() => speakWord(r)}
+                            className="px-2 py-0.5 rounded-full bg-info/10 text-info text-xs hover:bg-info/20 transition-colors cursor-pointer"
+                            title={`朗读: ${r}`}
                           >
                             {r}
-                          </a>
+                          </button>
                         ))}
+                        {item.replaces.length > 2 && (
+                          <span className="text-xs text-text-muted">+{item.replaces.length - 2}</span>
+                        )}
                       </div>
                     ) : (
                       <input
