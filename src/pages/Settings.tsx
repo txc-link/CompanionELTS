@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/utils/cn'
 import TranslationConfig from '@/components/ui/TranslationConfig'
+import { useSpeech, getEnglishVoices, getChineseVoices, speakWord } from '@/lib/speech'
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────
 const targetScores = ['6.0', '6.5', '7.0', '7.5']
@@ -26,6 +27,33 @@ export default function Settings() {
   const [aiPushMode, setAiPushMode] = useState('普通')
   const [darkMode, setDarkMode] = useState(true)
   const [nickname, setNickname] = useState('烤鸭人')
+
+  // ─── 音色选择 ──────────────────────────────────────────────────────
+  const {
+    englishVoices,
+    chineseVoices,
+    loaded,
+    speaking,
+    currentVoiceName,
+    setCurrentVoiceName,
+    speakWord: testSpeak,
+  } = useSpeech()
+
+  // 读取保存的音色
+  const savedVoice = localStorage.getItem('preferredVoice') || ''
+
+  // ─── 切换音色 ──────────────────────────────────────────────────
+  function handleVoiceChange(name: string) {
+    setCurrentVoiceName(name)
+    localStorage.setItem('preferredVoice', name)
+  }
+
+  // ─── 测试发音 ──────────────────────────────────────────────────
+  function handleTestVoice(voiceName: string) {
+    setCurrentVoiceName(voiceName)
+    localStorage.setItem('preferredVoice', voiceName)
+    testSpeak('sustainable development')
+  }
 
   return (
     <div className="max-w-[800px] mx-auto space-y-5">
@@ -253,6 +281,88 @@ export default function Settings() {
             </span>
           </label>
         </div>
+      </Card>
+
+      {/* 🔊 发音音色选择 */}
+      <Card>
+        <CardTitle>🔊 发音设置</CardTitle>
+        {!loaded ? (
+          <div className="text-xs text-text-muted py-2">加载中…</div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-xs text-text-muted">
+              点击任意音色可切换，点击右侧 🔊 按钮可试听。切换后全局生效。
+            </p>
+
+            {/* 英文音色 */}
+            <div>
+              <label className="text-xs font-semibold text-text-secondary mb-2 block">
+                🇬🇧 英文音色 ({englishVoices.length} 个)
+              </label>
+              <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto">
+                {englishVoices.map((vi) => (
+                  <div key={vi.voice.name} className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleVoiceChange(vi.voice.name)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-[8px] text-xs border transition-all duration-200 cursor-pointer',
+                        currentVoiceName === vi.voice.name
+                          ? 'bg-accent-green text-bg-primary border-accent-green shadow-[0_0_8px_rgba(110,197,110,0.3)]'
+                          : 'bg-bg-elevated text-text-secondary border-border-subtle hover:border-accent-green/50'
+                      )}
+                    >
+                      {vi.label.split('(')[0].trim()}
+                    </button>
+                    <button
+                      onClick={() => handleTestVoice(vi.voice.name)}
+                      className="text-xs text-text-muted hover:text-accent-green cursor-pointer px-1"
+                      title="试听"
+                    >
+                      🔊
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 中文音色 */}
+            {chineseVoices.length > 0 && (
+              <div>
+                <label className="text-xs font-semibold text-text-secondary mb-2 block">
+                  🇨🇳 中文音色 ({chineseVoices.length} 个)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {chineseVoices.map((vi) => (
+                    <div key={vi.voice.name} className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleVoiceChange(vi.voice.name)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-[8px] text-xs border transition-all duration-200 cursor-pointer',
+                          currentVoiceName === vi.voice.name
+                            ? 'bg-accent-green text-bg-primary border-accent-green shadow-[0_0_8px_rgba(110,197,110,0.3)]'
+                            : 'bg-bg-elevated text-text-secondary border-border-subtle hover:border-accent-green/50'
+                        )}
+                      >
+                        {vi.label.split('(')[0].trim()}
+                      </button>
+                      <button
+                        onClick={() => handleTestVoice(vi.voice.name)}
+                        className="text-xs text-text-muted hover:text-accent-green cursor-pointer px-1"
+                        title="试听"
+                      >
+                        🔊
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {englishVoices.length === 0 && (
+              <p className="text-xs text-danger">⚠️ 未检测到英文语音，请检查浏览器设置或允许语音权限</p>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Translation Settings */}
